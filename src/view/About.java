@@ -57,8 +57,9 @@ public About(JFrame frame)
     textArea.append("Software Version: " + Options.SOFTWARE_VERSION + "\n");
 
     textArea.append("\n");
+    textArea.append("Author: Hunter Schoonover" + "\n");
     textArea.append("Author: Mike Schoonover" + "\n");
-
+    
     setVisible(true);
 
 }//end of About::About (constructor)
