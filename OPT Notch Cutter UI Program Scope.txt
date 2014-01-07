@@ -1,0 +1,45 @@
+
+
+Project Scope
+-----------------------------------------------------
+
+-- User Interface --
+
+UI will have multiple NotchCutter Monitor panels and will be able to interface with multiple devices -- one for each panel.
+
+Each NotchCutter Monitor panel will have
+   
+    1 red LED array to display Voltage level (10 LEDs)
+    1 green LED array to display Current level (10 LEDs)
+    1 value spinner for entry of target depth value
+    1 button so send target depth value to associated device
+    1 label showing current cutting head position
+    1 green LED to show Power OK status
+    1 red LED so show Power Shorted status
+    1 radio button to select NotchWall mode
+    1 button to turn cutting voltage on and off
+    1 button to raise cutting head
+    1 button to lower cutting head
+    1 button to start cutting sequence
+    1 button to startstop cycle test
+    1 button to increase cutting aggression
+    1 button to decrease cutting aggression
+    1 button to save values and settings to disk
+
+-- Program Operation --
+
+On startup, program will broadcast UDP packets to all listeners on the ethernet port.
+All listeners who respond will be stored in an array of devices.
+A panel will be created for each device in the array.
+A TCPIP connection will be made with each device.
+Stored values will be loaded and sent to each device.
+When user clicks a button, data andor values will be sent to the appropriate device.
+The ethernet connections will be monitored for data from the devices.
+The Voltage and Current LED arrays will be set according to values received from the devices.
+The cutting head position label will be updated from values received from the devices.
+When the user clicks the Save button, the current values and settings in that panel will be saved to disk.
+
+-- Legacy Code --
+
+Subroutines to broadcast UDP queries and create TCPIP links already exist and will be modified for this project.
+Subroutines to save data in ini file format already exist and will be used in this project.
