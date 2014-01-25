@@ -43,7 +43,7 @@ public class LEDGroup extends JPanel{
     private static final int X_GAP = 5;
     
     private static final int Y_OFFSET = 20;
-    private static final int Y_PADDING = 5;
+    private static final int Y_PADDING = 10;
     
     private int ledArrayLength;
     private int ledWidth;
@@ -96,7 +96,7 @@ public void init()
 //      size of the leds
 //      amount of space between the leds
 //      X and Y offsets
-//      room for the border
+//      X and Y padding
 //
 
 public void determineAndSetSize()
@@ -107,7 +107,9 @@ public void determineAndSetSize()
     int width = X_OFFSET + X_PADDING + X_GAP * (ledArrayLength - 1) + 
                     ledWidth * ledArrayLength;
     
-    Tools.setSizes(this, width, 40);
+    int height = Y_OFFSET + Y_PADDING + ledHeight;
+    
+    Tools.setSizes(this, width, height);
     
 }// end of LEDGroup::determineAndSetSize
 //-----------------------------------------------------------------------------
