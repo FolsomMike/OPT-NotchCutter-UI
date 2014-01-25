@@ -151,7 +151,7 @@ public void setupMainFrame()
     mainFrame.setContentPane(mainPanel);
 
     //set the min/max/preferred sizes of the panel to set the size of the frame
-    Tools.setSizes(mainPanel, 200, 300);
+    Tools.setSizes(mainPanel, 600, 600);
 
     mainFrame.addWindowListener(this);
 
@@ -186,6 +186,12 @@ private void setupGui()
 {
 
     mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+    
+    LEDGroup ledGroup1 = new LEDGroup(10, Color.GREEN, mainPanel.getBackground()); 
+    
+    ledGroup1.init();
+    
+    mainPanel.add(ledGroup1);
 
     mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
 
