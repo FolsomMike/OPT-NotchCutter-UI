@@ -34,6 +34,7 @@ public class LED {
     Rectangle2D.Double LEDOutline;
     
     int x, y;
+    int ledWidth, ledHeight;
     
     Color fillColor;
     Color onColor;
@@ -43,12 +44,14 @@ public class LED {
 // LED::LED (constructor)
 //
 
-public LED(int pX, int pY, Color pOnColor, Color pOffColor)
+public LED(int pX, int pY, int pLedWidth, int pLedHeight, Color pOnColor, 
+                Color pOffColor)
 {
     
     x = pX;
     y = pY;
-    
+    ledWidth = pLedWidth;
+    ledHeight = pLedHeight;
     onColor = pOnColor;
     offColor = pOffColor;
     
@@ -106,11 +109,12 @@ public void paint(Graphics2D pG2)
     
     pG2.setColor(Color.BLACK);
     
-    pG2.draw(LEDOutline = new Rectangle2D.Double(x, y, 10, 10));
+    pG2.draw(LEDOutline = new Rectangle2D.Double(x, y, ledWidth, ledHeight));
     
     pG2.setColor(fillColor);
     
-    pG2.fill(LED = new Rectangle2D.Double(x + 1, y + 1, 9, 9));
+    pG2.fill(LED = new Rectangle2D.Double(x + 1, y + 1, ledWidth - 1, 
+                                            ledHeight - 1));
     
 }// end of LED::paint
 //-----------------------------------------------------------------------------

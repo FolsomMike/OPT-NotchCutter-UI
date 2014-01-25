@@ -35,6 +35,7 @@ import java.awt.event.WindowListener;
 import java.awt.font.TextAttribute;
 import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -187,11 +188,21 @@ private void setupGui()
 
     mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
     
-    LEDGroup ledGroup1 = new LEDGroup(10, Color.GREEN, mainPanel.getBackground()); 
+    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
     
-    ledGroup1.init();
+    LEDGroup current = new LEDGroup("Current", 10, 20, 20, Color.RED,
+                                        mainPanel.getBackground()); 
+    current.init();
+    current.setAlignmentX(Component.LEFT_ALIGNMENT);
+    mainPanel.add(current);
     
-    mainPanel.add(ledGroup1);
+    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
+    
+    LEDGroup voltage = new LEDGroup("Voltage", 10, 10, 10, Color.GREEN, 
+                                        mainPanel.getBackground()); 
+    voltage.init();
+    voltage.setAlignmentX(Component.LEFT_ALIGNMENT);
+    mainPanel.add(voltage);
 
     mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
 

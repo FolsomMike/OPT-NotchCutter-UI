@@ -20,6 +20,7 @@ package view;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import toolkit.Tools;
 
@@ -35,20 +36,31 @@ public class LEDGroup extends JPanel{
     private Color onColor;
     private Color offColor;
     
+    private String title;
+    
     private static final int X_OFFSET = 10;
-    private static final int X_SPACING = 15;
-    private static final int Y_OFFSET = 0;
+    private static final int X_PADDING = 10;
+    private static final int X_GAP = 5;
+    
+    private static final int Y_OFFSET = 20;
+    private static final int Y_PADDING = 5;
     
     private int ledArrayLength;
+    private int ledWidth;
+    private int ledHeight;
     
 //-----------------------------------------------------------------------------
 // LEDGroup::LEDGroup (constructor)
 //
 
-public LEDGroup(int pLedArrayLength, Color pOnColor, Color pOffColor)
+public LEDGroup(String pTitle, int pLedArrayLength, int pLedWidth,
+                    int pLedHeight, Color pOnColor, Color pOffColor)
 {
     
+    title = pTitle;
     ledArrayLength = pLedArrayLength;
+    ledWidth = pLedWidth;
+    ledHeight = pLedHeight;
     onColor = pOnColor;
     offColor = pOffColor;
     
@@ -65,9 +77,11 @@ public LEDGroup(int pLedArrayLength, Color pOnColor, Color pOffColor)
 public void init()
 {
     
-    Tools.setSizes(this, 156, 40);
+    determineAndSetSize();
     
     createLeds();
+    
+    setBorder();
     
 }// end of LEDGroup::init
 //-----------------------------------------------------------------------------
@@ -81,7 +95,7 @@ public void init()
 //      the number of leds
 //      size of the leds
 //      amount of space between the leds
-//      the size of the left and right offsets
+//      X and Y offsets
 //      room for the border
 //
 
@@ -90,8 +104,10 @@ public void determineAndSetSize()
     
     // hss whip
     
+    int width = X_OFFSET + X_PADDING + X_GAP * (ledArrayLength - 1) + 
+                    ledWidth * ledArrayLength;
     
-    // Tools.setSizes(this, 40, 40);
+    Tools.setSizes(this, width, 40);
     
 }// end of LEDGroup::determineAndSetSize
 //-----------------------------------------------------------------------------
@@ -111,9 +127,10 @@ public void createLeds()
     
     for (int i = 0; i < ledArray.length; i++) {
         
-        ledXValue = X_OFFSET + i * X_SPACING;
+        ledXValue = X_OFFSET + i * (ledWidth + X_GAP);
         
-        ledArray[i] = new LED(ledXValue, Y_OFFSET, onColor, offColor);
+        ledArray[i] = new LED(ledXValue, Y_OFFSET, ledWidth, ledHeight, 
+                                    onColor, offColor);
         
         ledArray[i].init();
         
@@ -122,6 +139,22 @@ public void createLeds()
     }
     
 }// end of LEDGroup::createLeds
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// LEDGroup::setBorder
+//
+// Creates a border for the panel.
+//
+
+public void setBorder()
+{
+
+    this.setBorder(BorderFactory.createTitledBorder(
+                            BorderFactory.createLineBorder(Color.black), 
+                            title));
+    
+}// end of LEDGroup::setBorder
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
