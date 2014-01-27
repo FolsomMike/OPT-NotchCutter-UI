@@ -71,6 +71,10 @@ public class View implements ActionListener, WindowListener
     private ThreadSafeLogger tsLog;
     private Help help;
     private About about;
+    
+    // hss wip -- set to private and create a getter
+    public LEDGroup voltageLeds;
+    public LEDGroup currentLeds;
 
     private javax.swing.Timer mainTimer;
 
@@ -81,7 +85,7 @@ public class View implements ActionListener, WindowListener
 
     private JLabel statusLabel, infoLabel;
     private JLabel progressLabel;
-
+    
 //-----------------------------------------------------------------------------
 // View::View (constructor)
 //
@@ -190,19 +194,21 @@ private void setupGui()
     
     mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
     
-    LEDGroup current = new LEDGroup("Current", 10, 20, 20, Color.RED,
+    currentLeds = new LEDGroup("Current", 10, 20, 10, Color.RED,
                                         mainPanel.getBackground()); 
-    current.init();
-    current.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(current);
+    currentLeds.init();
+    currentLeds.setRange(0, 10);
+    currentLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
+    mainPanel.add(currentLeds);
     
     mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
     
-    LEDGroup voltage = new LEDGroup("Voltage", 10, 10, 10, Color.GREEN, 
+    voltageLeds = new LEDGroup("Voltage", 10, 20, 10, Color.GREEN, 
                                         mainPanel.getBackground()); 
-    voltage.init();
-    voltage.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(voltage);
+    voltageLeds.init();
+    voltageLeds.setRange(0, 10);
+    voltageLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
+    mainPanel.add(voltageLeds);
 
     mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
 
@@ -436,7 +442,7 @@ public void setupAndStartMainTimer()
 {
 
     //main timer has 2 second period
-    mainTimer = new javax.swing.Timer (2000, this);
+    mainTimer = new javax.swing.Timer (100, this);
     mainTimer.setActionCommand ("Timer");
     mainTimer.start();
 

@@ -71,6 +71,10 @@ public class Controller implements EventHandler, Runnable
     private String tSafeText;
 
     private int displayUpdateTimer = 0;
+    
+    // hss wip -- should remove
+    private double voltSimLevel = 5;
+    private double currentSimLevel = 0;
 
     private String XMLPageFromRemote;
 
@@ -215,8 +219,66 @@ public void saveDataToFile()
 public void doTimerActions()
 {
 
-
+    // hss wip -- simulation purposes should remove
+    simulateVoltageAndCurrentLevels();
+    
 }//end of Controller::doTimerActions
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Controller::simulateVoltageAndCurrentLevels
+//
+// Simulates values for the voltage and current levels.
+// 
+// hss wip -- simulation purposes; should remove
+//
+
+public void simulateVoltageAndCurrentLevels()
+{
+
+    // hss wip
+    // for simulation purposes -- should remove
+    
+    double deltaSim;
+    
+    // simulate value for voltage leds
+    
+    deltaSim = (5 * Math.random()) - 2.5;
+    
+    voltSimLevel += deltaSim;
+    
+    if (voltSimLevel < 0) {
+        voltSimLevel = 0;
+    }
+    
+    if (voltSimLevel > 10) {
+        voltSimLevel = 10;
+    }
+    
+    view.voltageLeds.setValue(voltSimLevel);
+    
+    view.voltageLeds.repaint();
+    
+    
+    // simulate value for current leds
+    
+    deltaSim = (5 * Math.random()) - 2.5;
+    
+    currentSimLevel += deltaSim;
+    
+    if (currentSimLevel < 0) {
+        currentSimLevel = 0;
+    }
+    
+    if (currentSimLevel > 10) {
+        currentSimLevel = 10;
+    }
+    
+    view.currentLeds.setValue(currentSimLevel);
+    
+    view.currentLeds.repaint();
+
+}// end of Controller::simulateVoltageAndCurrentLevels
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

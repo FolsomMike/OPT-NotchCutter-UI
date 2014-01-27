@@ -17,10 +17,8 @@ package view;
 //-----------------------------------------------------------------------------
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
-import toolkit.Tools;
 
 
 //-----------------------------------------------------------------------------
@@ -66,6 +64,8 @@ public LED(int pX, int pY, int pLedWidth, int pLedHeight, Color pOnColor,
 
 public void init()
 {
+    
+    fillColor = offColor;
       
 }// end of LED::init
 //-----------------------------------------------------------------------------

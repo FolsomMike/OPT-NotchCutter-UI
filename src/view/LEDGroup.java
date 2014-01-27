@@ -87,10 +87,6 @@ public void init()
     
     setBorder();
     
-    setRange(10.5, 20.5);
-    
-    setValue(11.5);
-    
 }// end of LEDGroup::init
 //-----------------------------------------------------------------------------
 
