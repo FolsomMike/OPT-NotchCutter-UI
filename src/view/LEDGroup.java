@@ -41,13 +41,17 @@ public class LEDGroup extends JPanel{
     private static final int X_OFFSET = 10;
     private static final int X_PADDING = 10;
     private static final int X_GAP = 5;
-    
     private static final int Y_OFFSET = 20;
     private static final int Y_PADDING = 10;
     
     private int ledArrayLength;
-    private int ledWidth;
-    private int ledHeight;
+    private int ledWidth, ledHeight;
+    private int minValue, maxValue;
+    private int range;
+    private int inputValue;
+    private int highestLitLedIndex;
+    
+    private double stepValue;
     
 //-----------------------------------------------------------------------------
 // LEDGroup::LEDGroup (constructor)
@@ -136,11 +140,84 @@ public void createLeds()
         
         ledArray[i].init();
         
+        // hss whip
         ledArray[i].turnOn();
         
     }
     
 }// end of LEDGroup::createLeds
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// LEDGroup::setRange
+//
+// Sets the minimum and maximum input values that will be used.
+// Determines the step size of each led; sets the value at which an led should
+// be turned on.
+//
+
+public void setRange(int pMinValue, int pMaxValue)
+{
+    
+    minValue = pMinValue;
+    maxValue = pMaxValue;
+    
+    range = maxValue - minValue;
+    
+    stepValue = range / ledArrayLength;
+    
+}// end of LEDGroup::setRange
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// LEDGroup::setValue
+//
+// Sets the input value and determines the index of the highest led to turn on.
+//
+
+public void setValue(int pInputValue)
+{
+    
+    inputValue = pInputValue;
+    
+    highestLitLedIndex = (int)(inputValue / stepValue) - 1;
+    
+    if (highestLitLedIndex < 0) {
+        highestLitLedIndex = 0;
+    }
+    
+    if (highestLitLedIndex >= ledArray.length) {
+        highestLitLedIndex = ledArray.length - 1;
+    }
+    
+    setAllLedStatesToRepresentInputValue();
+    
+}// end of LEDGroup::setValue
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// LEDGroup::setAllLedStatesToRepresentInputValue
+//
+// Sets the states of all of the leds in the led array to on or off
+// corresponding to the input value.
+//
+
+public void setAllLedStatesToRepresentInputValue()
+{
+    
+    for (int i = 0; i < ledArray.length; i++) {
+        
+        if (i <= highestLitLedIndex) {
+            ledArray[i].turnOn();
+        }
+        
+        else {
+            ledArray[i].turnOff();
+        }
+        
+    }// end of for (int i = 0; i < ledArray.length; i++)
+    
+}// end of LEDGroup::setAllLedStatesToRepresentInputValue
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
