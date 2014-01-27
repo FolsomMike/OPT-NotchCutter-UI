@@ -46,12 +46,12 @@ public class LEDGroup extends JPanel{
     
     private int ledArrayLength;
     private int ledWidth, ledHeight;
-    private int minValue, maxValue;
-    private int range;
-    private int inputValue;
     private int highestLitLedIndex;
     
     private double stepValue;
+    private double inputValue;
+    private double minValue, maxValue;
+    private double range;
     
 //-----------------------------------------------------------------------------
 // LEDGroup::LEDGroup (constructor)
@@ -86,6 +86,10 @@ public void init()
     createLeds();
     
     setBorder();
+    
+    setRange(10.5, 20.5);
+    
+    setValue(11.5);
     
 }// end of LEDGroup::init
 //-----------------------------------------------------------------------------
@@ -140,10 +144,7 @@ public void createLeds()
         
         ledArray[i].init();
         
-        // hss whip
-        ledArray[i].turnOn();
-        
-    }
+    }// end of for (int i = 0; i < ledArray.length; i++)
     
 }// end of LEDGroup::createLeds
 //-----------------------------------------------------------------------------
@@ -156,7 +157,7 @@ public void createLeds()
 // be turned on.
 //
 
-public void setRange(int pMinValue, int pMaxValue)
+public void setRange(double pMinValue, double pMaxValue)
 {
     
     minValue = pMinValue;
@@ -175,15 +176,23 @@ public void setRange(int pMinValue, int pMaxValue)
 // Sets the input value and determines the index of the highest led to turn on.
 //
 
-public void setValue(int pInputValue)
+public void setValue(double pInputValue)
 {
     
     inputValue = pInputValue;
     
-    highestLitLedIndex = (int)(inputValue / stepValue) - 1;
+    if (inputValue < minValue) {
+        inputValue = minValue;
+    }
+    
+    if (inputValue > maxValue) {
+        inputValue = maxValue;
+    }
+    
+    highestLitLedIndex = (int)((inputValue - minValue) / stepValue) - 1;
     
     if (highestLitLedIndex < 0) {
-        highestLitLedIndex = 0;
+        highestLitLedIndex = -1;
     }
     
     if (highestLitLedIndex >= ledArray.length) {
@@ -206,13 +215,18 @@ public void setAllLedStatesToRepresentInputValue()
 {
     
     for (int i = 0; i < ledArray.length; i++) {
+            ledArray[i].turnOff();
+    }
+    
+    // if input value is less than lowest step, no leds are lit
+    if (highestLitLedIndex == -1) {
+        return;
+    }
+    
+    for (int i = 0; i < ledArray.length; i++) {
         
         if (i <= highestLitLedIndex) {
             ledArray[i].turnOn();
-        }
-        
-        else {
-            ledArray[i].turnOff();
         }
         
     }// end of for (int i = 0; i < ledArray.length; i++)
