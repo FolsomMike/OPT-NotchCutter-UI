@@ -31,6 +31,9 @@ public class LED {
     
     Rectangle2D.Double LEDOutline;
     
+    public static final int OFF = 0, ON = 1;
+    
+    int ledState;
     int x, y;
     int ledWidth, ledHeight;
     
@@ -71,31 +74,24 @@ public void init()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// LED::turnOn
+// LED::setState
 //
-// Changes the LED's fill color to it's on color.
+// Changes the LED's fill color to match the state passed in as a parameter.
 //
 
-public void turnOn()
+public void setState(int pState)
 {
+    ledState = pState;
     
-      fillColor = onColor;
-      
-}// end of LED::turnOn
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// LED::turnOff
-//
-// Changes the LED's fill color to it's off color.
-//
-
-public void turnOff()
-{
+    if (ledState == ON) {
+        fillColor = onColor;
+    }
     
-      fillColor = offColor;
+    else if (ledState == OFF) {
+        fillColor = offColor;
+    } 
       
-}// end of LED::turnOff
+}// end of LED::setState
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

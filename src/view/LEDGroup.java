@@ -211,7 +211,7 @@ public void setAllLedStatesToRepresentInputValue()
 {
     
     for (int i = 0; i < ledArray.length; i++) {
-            ledArray[i].turnOff();
+            ledArray[i].setState(LED.OFF);
     }
     
     // if input value is less than lowest step, no leds are lit
@@ -222,7 +222,7 @@ public void setAllLedStatesToRepresentInputValue()
     for (int i = 0; i < ledArray.length; i++) {
         
         if (i <= highestLitLedIndex) {
-            ledArray[i].turnOn();
+            ledArray[i].setState(LED.ON);
         }
         
     }// end of for (int i = 0; i < ledArray.length; i++)
