@@ -156,7 +156,7 @@ public void setupMainFrame()
     mainFrame.setContentPane(mainPanel);
 
     //set the min/max/preferred sizes of the panel to set the size of the frame
-    Tools.setSizes(mainPanel, 600, 600);
+    //Tools.setSizes(mainPanel, 600, 600); // debug hss
 
     mainFrame.addWindowListener(this);
 
@@ -286,6 +286,32 @@ private void setupGui()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// View::createNotcherUI
+//
+// Creates a new NotcherUI and passes pEventHandler in as the EventHandler.
+//
+
+public NotcherUI createNotcherUI(EventHandler pEventHandler)
+{
+
+    NotcherUI tempNotcherUI;
+    
+    tempNotcherUI = new NotcherUI(pEventHandler);
+    
+    tempNotcherUI.init();
+    
+    tempNotcherUI.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    mainPanel.add(tempNotcherUI);
+    
+    mainFrame.pack();
+    
+    return tempNotcherUI;
+
+}//end of View::createNotcherUI
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // View::createFonts
 //
 // Creates fonts for use by the program.
@@ -394,24 +420,6 @@ public void updateGUIDataSet1()
     dataTArea2.setText(aDataClass.getDataItem(1));
 
 }//end of View::updateGUIDataSet1
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// View::drawRectangle
-//
-// Draws a rectangle on mainPanel
-//
-
-public void drawRectangle()
-{
-
-    
-    Graphics2D g2 = (Graphics2D)mainPanel.getGraphics();
-
-     // draw Rectangle2D.Double
-    g2.draw(new Rectangle2D.Double(20, 10,10, 10));
-        
-}//end of View::drawRectangle
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
