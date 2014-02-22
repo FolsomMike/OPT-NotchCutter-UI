@@ -58,27 +58,29 @@ public class NotcherController implements EventHandler, Runnable
     private String tSafeText;
 
     private int displayUpdateTimer = 0;
+    private int indexNumber;
     
     // hss wip -- should remove
     private double voltSimLevel = 5;
     private double currentSimLevel = 0;
 
     private String XMLPageFromRemote;
+    
+    private final String newline = "\n";
 
     private boolean shutDown = false;
 
     private final JFileChooser fileChooser = new JFileChooser();
 
-    private final String newline = "\n";
-
 //-----------------------------------------------------------------------------
 // NotcherController::NotcherController (constructor)
 //
 
-public NotcherController(View pView)
+public NotcherController(View pView, int pIndexNmber)
 {
 
     view = pView;
+    indexNumber = pIndexNmber;
     
 }//end of NotcherController::NotcherController (constructor)
 //-----------------------------------------------------------------------------
@@ -115,7 +117,7 @@ public void init()
 public NotcherUI createNotcherUI()
 {
     
-    return (view.createNotcherUI(this));
+    return (view.createNotcherUI(this, indexNumber));
 
 }// end of NotcherController::createNotcherUI
 //-----------------------------------------------------------------------------

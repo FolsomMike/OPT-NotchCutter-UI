@@ -57,24 +57,22 @@ public class View implements ActionListener, WindowListener
 
     private JFrame mainFrame;
     private JPanel mainPanel;
-
-    private ADataClass aDataClass;
-
-    private MainMenu mainMenu;
-
+    private JPanel topNotcherPanel;
+    private JPanel bottomNotcherPanel;
+    
     private JTextField dataVersionTField;
     private JTextField dataTArea1;
     private JTextField dataTArea2;
 
+    private ADataClass aDataClass;
+
+    private MainMenu mainMenu;
+    
     private GuiUpdater guiUpdater;
     private Log log;
     private ThreadSafeLogger tsLog;
     private Help help;
     private About about;
-    
-    // hss wip -- set to private and create a getter
-    public LEDGroup voltageLeds;
-    public LEDGroup currentLeds;
 
     private javax.swing.Timer mainTimer;
 
@@ -82,9 +80,6 @@ public class View implements ActionListener, WindowListener
 
     private Font blackSmallFont, redSmallFont;
     private Font redLargeFont, greenLargeFont, yellowLargeFont, blackLargeFont;
-
-    private JLabel statusLabel, infoLabel;
-    private JLabel progressLabel;
     
 //-----------------------------------------------------------------------------
 // View::View (constructor)
@@ -192,96 +187,19 @@ private void setupGui()
 
     mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
     
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
+    topNotcherPanel = new JPanel();
+    topNotcherPanel.setLayout(new BoxLayout(topNotcherPanel,
+                                                BoxLayout.X_AXIS));
+    topNotcherPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    currentLeds = new LEDGroup("Current", 10, 20, 10, Color.RED,
-                                        mainPanel.getBackground()); 
-    currentLeds.init();
-    currentLeds.setRange(0, 10);
-    currentLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(currentLeds);
+    mainPanel.add(topNotcherPanel);
     
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
+    bottomNotcherPanel = new JPanel();
+    bottomNotcherPanel.setLayout(new BoxLayout(bottomNotcherPanel, 
+                                                BoxLayout.X_AXIS));
+    bottomNotcherPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    mainPanel.add(bottomNotcherPanel);
     
-    voltageLeds = new LEDGroup("Voltage", 10, 20, 10, Color.GREEN, 
-                                        mainPanel.getBackground()); 
-    voltageLeds.init();
-    voltageLeds.setRange(0, 10);
-    voltageLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(voltageLeds);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //create a label to display good/warning/bad system status
-    statusLabel = new JLabel("Status");
-    statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(statusLabel);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //create a label to display miscellaneous info
-    infoLabel = new JLabel("Info");
-    infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(infoLabel);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //add text field
-    dataVersionTField = new JTextField("unknown");
-    dataVersionTField.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataVersionTField, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataVersionTField.setToolTipText("The data format version.");
-    mainPanel.add(dataVersionTField);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,3))); //vertical spacer
-
-    //add text field
-    dataTArea1 = new JTextField("");
-    dataTArea1.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataTArea1, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataTArea1.setToolTipText("A data entry.");
-    mainPanel.add(dataTArea1);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,3))); //vertical spacer
-
-    //add text field
-    dataTArea2 = new JTextField("");
-    dataTArea2.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataTArea2, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataTArea2.setToolTipText("A data entry.");
-    mainPanel.add(dataTArea2);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //add button
-    JButton loadBtn = new JButton("Load");
-    loadBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    loadBtn.setActionCommand("Load Data From File");
-    loadBtn.addActionListener(this);
-    loadBtn.setToolTipText("Load data from file.");
-    mainPanel.add(loadBtn);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
-
-    //add a button
-    JButton saveBtn = new JButton("Save");
-    saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    saveBtn.setActionCommand("Save Data To File");
-    saveBtn.addActionListener(this);
-    saveBtn.setToolTipText("Save data to file.");
-    mainPanel.add(saveBtn);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
-
-    progressLabel = new JLabel("Progress");
-    progressLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(progressLabel);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
-
 }// end of View::setupGui
 //-----------------------------------------------------------------------------
 
@@ -291,18 +209,28 @@ private void setupGui()
 // Creates a new NotcherUI and passes pEventHandler in as the EventHandler.
 //
 
-public NotcherUI createNotcherUI(EventHandler pEventHandler)
+public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
 {
 
     NotcherUI tempNotcherUI;
     
-    tempNotcherUI = new NotcherUI(pEventHandler);
+    tempNotcherUI = new NotcherUI(pEventHandler, pIndexNumber);
     
     tempNotcherUI.init();
     
     tempNotcherUI.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    mainPanel.add(tempNotcherUI);
+    if (pIndexNumber <= 1) {
+        
+        topNotcherPanel.add(tempNotcherUI);
+        
+    }
+    
+    else if (pIndexNumber > 1) {
+        
+        bottomNotcherPanel.add(tempNotcherUI);
+        
+    }
     
     mainFrame.pack();
     

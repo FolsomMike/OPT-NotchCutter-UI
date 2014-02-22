@@ -88,7 +88,7 @@ public class Controller implements EventHandler, Runnable
     
     // hss wip -- should be removed after notchers
     // are detected on the network
-    private static final int NCNUMBER = 1;
+    private static final int NCNUMBER = 4;
 
 //-----------------------------------------------------------------------------
 // Controller::Controller (constructor)
@@ -161,7 +161,7 @@ public void createNotcherControllers()
 
     for (int i = 0; i < notchControllerArray.length; i++) {
         
-        notchControllerArray[i] = new NotcherController(view);
+        notchControllerArray[i] = new NotcherController(view, i);
         
         notchControllerArray[i].init();
     
@@ -266,9 +266,6 @@ public void saveDataToFile()
 
 public void doTimerActions()
 {
-
-    // hss wip -- simulation purposes should remove
-    simulateVoltageAndCurrentLevels();
     
     // calls all of the doTimerActions for each of the notcherContollers
     for (int i = 0; i < notchControllerArray.length; i++) {
@@ -278,62 +275,6 @@ public void doTimerActions()
     }
     
 }//end of Controller::doTimerActions
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Controller::simulateVoltageAndCurrentLevels
-//
-// Simulates values for the voltage and current levels.
-// 
-// hss wip -- simulation purposes; should remove
-//
-
-public void simulateVoltageAndCurrentLevels()
-{
-
-    // hss wip
-    // for simulation purposes -- should remove
-    
-    double deltaSim;
-    
-    // simulate value for voltage leds
-    
-    deltaSim = (5 * Math.random()) - 2.5;
-    
-    voltSimLevel += deltaSim;
-    
-    if (voltSimLevel < 0) {
-        voltSimLevel = 0;
-    }
-    
-    if (voltSimLevel > 10) {
-        voltSimLevel = 10;
-    }
-    
-    view.voltageLeds.setValue(voltSimLevel);
-    
-    view.voltageLeds.repaint();
-    
-    
-    // simulate value for current leds
-    
-    deltaSim = (5 * Math.random()) - 2.5;
-    
-    currentSimLevel += deltaSim;
-    
-    if (currentSimLevel < 0) {
-        currentSimLevel = 0;
-    }
-    
-    if (currentSimLevel > 10) {
-        currentSimLevel = 10;
-    }
-    
-    view.currentLeds.setValue(currentSimLevel);
-    
-    view.currentLeds.repaint();
-
-}// end of Controller::simulateVoltageAndCurrentLevels
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
