@@ -41,9 +41,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
 import model.ADataClass;
 import model.Options;
 import view.View;
+import view.MFloatSpinner;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -534,12 +536,15 @@ public void windowClosing(WindowEvent e)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::(various window listener functions)
+// Controller::(various window & listener functions)
 //
-// These functions are implemented per requirements of interface WindowListener
-// but do nothing at the present time.  As code is added to each function, it
-// should be moved from this section and formatted properly.
+// These functions are implemented per requirements of interfaces WindowListener
+// & ChnageListener but do nothing at the present time.  As code is added to 
+// each function, it should be moved from this section and formatted properly.
 //
+
+@Override
+public void stateChanged(ChangeEvent ce){}
 
 @Override
 public void windowActivated(WindowEvent e){}
@@ -556,7 +561,7 @@ public void windowIconified(WindowEvent e){}
 @Override
 public void windowDeiconified(WindowEvent e){}
 
-//end of Controller::(various window listener functions)
+//end of Controller::(various window & change listener functions)
 //-----------------------------------------------------------------------------
 
 

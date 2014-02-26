@@ -25,8 +25,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
 import model.ADataClass;
 import model.Options;
+import view.MFloatSpinner;
 import view.NotcherUI;
 import view.View;
 
@@ -156,6 +158,54 @@ public void actionPerformed(ActionEvent e)
     }
 
 }//end of NotcherController::actionPerformed
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Controller::stateChanged
+//
+    
+@Override
+public void stateChanged(ChangeEvent ce)
+
+{
+    
+    //if for some reason the object which changed state is not a subclass of
+    //of Component, do nothing as this code only handles Components
+    
+    if (!(ce.getSource() instanceof Component)) {
+        return;
+    }    
+    
+    //cast the object to a Component so it's methods can be accessed
+    Component c = (Component)(ce.getSource());
+    
+    String name = c.getName();
+        
+    if (name.startsWith("Depth Input Spinner")){
+    
+        //Since we know that the Component with the name starting with
+        //"Depth Input Spinner" is an MFloatSpinner (because we created it and
+        // used that name for it), it can safely be cast to an MFloatSpinner.
+        //Since the values in that spinner are meant to be doubles, the
+        //getDoubleValue method is used to retrieve the value.
+        
+        double value = ((MFloatSpinner)c).getDoubleValue();
+    
+        notcherUI.setTextForDataTArea1("" + value);
+
+        //using getDoubleValue as above will often return a value with a long
+        //fractional portion due to binary floating point conversion
+        //imprecision -- using getText returns the value as a string formatted
+        //exactly as that shown in the spinner's text box and will be rounded
+        //off and truncated in the same manner
+        
+        String textValue = ((MFloatSpinner)c).getText();
+        
+        notcherUI.setTextForDataTArea2(textValue);
+        
+    }
+        
+}//end of Controller::stateChanged
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

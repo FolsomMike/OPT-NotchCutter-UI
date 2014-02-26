@@ -6,6 +6,10 @@
 * Purpose:
 *
 * This class creates a visual interface for a notch cutter.
+* 
+* All GUI control events for each Notcher interface, including Timer events are 
+* caught by this object and passed on to the "NotcherController" object pointed
+* by the class member "eventHandler" for final handling.
 *
 */
 
@@ -19,19 +23,17 @@ import controller.EventHandler;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowListener;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import toolkit.Tools;
 
 
@@ -39,9 +41,12 @@ import toolkit.Tools;
 // class NotcherUI
 //
 
-public class NotcherUI extends JPanel implements ActionListener {
+public class NotcherUI extends JPanel implements ActionListener, ChangeListener {
     
     private EventHandler eventHandler;
+    
+    private JPanel loadAndSaveContainer;
+    private JPanel headGuiPanel;
     
     private JTextField dataVersionTField;
     private JTextField dataTArea1;
@@ -49,10 +54,13 @@ public class NotcherUI extends JPanel implements ActionListener {
     
     private JLabel statusLabel, infoLabel;
     private JLabel progressLabel;
+    private JLabel currentCuttingHeadPosition;
     
     // hss wip -- set to private and create a getter
     public LEDGroup voltageLeds;
     public LEDGroup currentLeds;
+    
+    private MFloatSpinner cutDepthInputSpinner;
     
     private int indexNumber;
     
@@ -106,6 +114,14 @@ public void setupGui()
     createVoltagePanel();
     
     add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
+    
+    createCutDepthInputSpinner();
+    
+    add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
+    
+    createLoadAndSaveButtons();
+    
+    add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
 
     //create a label to display good/warning/bad system status
     statusLabel = new JLabel("Status");
@@ -150,26 +166,6 @@ public void setupGui()
     add(dataTArea2);
 
     add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //add button
-    JButton loadBtn = new JButton("Load");
-    loadBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    loadBtn.setActionCommand("Load Data From File");
-    loadBtn.addActionListener(this);
-    loadBtn.setToolTipText("Load data from file.");
-    add(loadBtn);
-
-    add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
-
-    //add a button
-    JButton saveBtn = new JButton("Save");
-    saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    saveBtn.setActionCommand("Save Data To File");
-    saveBtn.addActionListener(this);
-    saveBtn.setToolTipText("Save data to file.");
-    add(saveBtn);
-
-    add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
 
     progressLabel = new JLabel("Progress");
     progressLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -221,6 +217,133 @@ public void createVoltagePanel()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// NotcherUI::createCutDepthInputSpinner
+//
+// Creates an MFloatSpinner object and adds it to the mainPanel.
+//
+
+public void createCutDepthInputSpinner()
+{
+    
+    // hss wip -- some of these values should be passed in and determined
+    // from elsewhere
+    cutDepthInputSpinner = new MFloatSpinner(5.5, 1.1, 9.9, 0.1, "##0.0", 
+                                                60, 20);
+    cutDepthInputSpinner.addChangeListener(this);
+    cutDepthInputSpinner.setName("Depth Input Spinner");
+    cutDepthInputSpinner.setToolTipText("Use this to edit the cut depth");
+    cutDepthInputSpinner.setAlignmentX(Component.LEFT_ALIGNMENT);
+    add(cutDepthInputSpinner);
+    
+}// end of NotcherUI::createCutDepthInputSpinner
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createLoadAndSaveButtons
+//
+// Creates the load and save buttons and adds them to the panel.
+//
+
+public void createLoadAndSaveButtons()
+{
+    
+    // add a containing JPanel to put the buttons next to each other instead
+    // of stacked
+    loadAndSaveContainer = new JPanel();
+    loadAndSaveContainer.setLayout(new BoxLayout(loadAndSaveContainer,
+                                                    BoxLayout.X_AXIS));
+    loadAndSaveContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+    add(loadAndSaveContainer);
+    
+    //add a button
+    JButton loadBtn = new JButton("Load");
+    loadBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    loadBtn.setActionCommand("Load Data From File");
+    loadBtn.addActionListener(this);
+    loadBtn.setToolTipText("Load data from file.");
+    loadAndSaveContainer.add(loadBtn);
+
+    loadAndSaveContainer.add(Box.createRigidArea(new Dimension(10,0))); //horizontal spacer
+
+    //add a button
+    JButton saveBtn = new JButton("Save");
+    saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    saveBtn.setActionCommand("Save Data To File");
+    saveBtn.addActionListener(this);
+    saveBtn.setToolTipText("Save data to file.");
+    loadAndSaveContainer.add(saveBtn);
+    
+}// end of NotcherUI::createLoadAndSaveButtons
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createHeadGuiPanel
+//
+// Creates a panel -- and all of its components -- that allows users to use
+// a graphical interface to change and view information related to the head.
+//
+
+public void createHeadGuiPanel()
+{
+    
+    // add a containing JPanel to put the buttons next to each other instead
+    // of stacked
+    headGuiPanel = new JPanel();
+    headGuiPanel.setLayout(new BoxLayout(headGuiPanel,
+                                                    BoxLayout.X_AXIS));
+    headGuiPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    add(headGuiPanel);
+    
+    //create a label to display the head's current cutting position
+    // hss wip value for label should be passed in from elsewhere
+    statusLabel = new JLabel("0.01");
+    statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    headGuiPanel.add(statusLabel);
+    
+
+    loadAndSaveContainer.add(Box.createRigidArea(new Dimension(10,0))); //horizontal spacer
+
+    //add a button
+    JButton sendTargetDepthBtn = new JButton("hello");
+    sendTargetDepthBtn.setBackground(Color.black);
+    sendTargetDepthBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    sendTargetDepthBtn.setActionCommand("Send target depth to device");
+    sendTargetDepthBtn.addActionListener(this);
+    sendTargetDepthBtn.setToolTipText("Send target depth to device");
+    loadAndSaveContainer.add(sendTargetDepthBtn);
+    
+}// end of NotcherUI::createHeadGuiPanel
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::setTextForDataTArea1
+//
+// Sets the text value for text box.
+//
+
+public void setTextForDataTArea1(String pText)
+{
+
+    dataTArea1.setText(pText);
+
+}// end of NotcherUI::setTextForDataTArea1
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::setTextForDataTArea2
+//
+// Sets the text value for text box.
+//
+
+public void setTextForDataTArea2(String pText)
+{
+
+    dataTArea2.setText(pText);
+
+}// end of NotcherUI::setTextForDataTArea2
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // NotcherUI::actionPerformed
 //
 // Responds to events and passes them on to the "Controller" (MVC Concept)
@@ -234,6 +357,18 @@ public void actionPerformed(ActionEvent e)
     eventHandler.actionPerformed(e);
 
 }//end of NotcherUI::actionPerformed
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::stateChanged
+//
+
+@Override
+public void stateChanged(ChangeEvent ce) {
+   
+    eventHandler.stateChanged(ce);
+
+}//end of View::stateChanged
 //-----------------------------------------------------------------------------
     
 }//end of class NotcherUI
