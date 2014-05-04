@@ -38,6 +38,7 @@ import java.util.HashMap;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -214,7 +215,7 @@ public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
 
     NotcherUI tempNotcherUI;
     
-    tempNotcherUI = new NotcherUI(pEventHandler, pIndexNumber);
+    tempNotcherUI = new NotcherUI(425, 400, pIndexNumber, pEventHandler);
     
     tempNotcherUI.init();
     
@@ -383,6 +384,33 @@ public void setupAndStartMainTimer()
     mainTimer.start();
 
 }// end of Controller::setupAndStartMainTimer
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::createImageIcon
+//
+// Returns an ImageIcon, or null if the path was invalid.
+//
+// ***************************************************************************
+// NOTE: You must use forward slashes in the path names for the resource
+// loader to find the image files in the JAR package.
+// ***************************************************************************
+//
+
+protected static ImageIcon createImageIcon(String pPath)
+{
+
+    // have to use the View class because it is located in the same package as
+    // the file; specifying the class specifies the first portion of the path
+    // to the image, this concatenated with the pPath
+    java.net.URL imgURL = View.class.getResource(pPath);
+
+    if (imgURL != null) {
+        return new ImageIcon(imgURL);
+    }
+    else {return null;}
+
+}//end of View::createImageIcon
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

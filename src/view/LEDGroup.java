@@ -38,11 +38,12 @@ public class LEDGroup extends JPanel{
     
     private String title;
     
-    private static final int X_OFFSET = 10;
-    private static final int X_PADDING = 10;
-    private static final int X_GAP = 5;
     private static final int Y_OFFSET = 20;
     private static final int Y_PADDING = 10;
+    
+    private int xOffset;
+    private int xPadding;
+    private int xGap;
     
     private int ledArrayLength;
     private int ledWidth, ledHeight;
@@ -58,13 +59,17 @@ public class LEDGroup extends JPanel{
 //
 
 public LEDGroup(String pTitle, int pLedArrayLength, int pLedWidth,
-                    int pLedHeight, Color pOnColor, Color pOffColor)
+                    int pLedHeight, int pXOffset, int pXPadding, int pXGap, 
+                    Color pOnColor, Color pOffColor)
 {
     
     title = pTitle;
     ledArrayLength = pLedArrayLength;
     ledWidth = pLedWidth;
     ledHeight = pLedHeight;
+    xOffset = pXOffset;
+    xPadding = pXPadding;
+    xGap = pXGap;
     onColor = pOnColor;
     offColor = pOffColor;
     
@@ -108,7 +113,7 @@ public void determineAndSetSize()
     
     // hss whip
     
-    int width = X_OFFSET + X_PADDING + X_GAP * (ledArrayLength - 1) + 
+    int width = xOffset + xPadding + xGap * (ledArrayLength - 1) + 
                     ledWidth * ledArrayLength;
     
     int height = Y_OFFSET + Y_PADDING + ledHeight;
@@ -133,7 +138,7 @@ public void createLeds()
     
     for (int i = 0; i < ledArray.length; i++) {
         
-        ledXValue = X_OFFSET + i * (ledWidth + X_GAP);
+        ledXValue = xOffset + xPadding/2 + i * (ledWidth + xGap);
         
         ledArray[i] = new LED(ledXValue, Y_OFFSET, ledWidth, ledHeight, 
                                     onColor, offColor);
@@ -239,6 +244,11 @@ public void setAllLedStatesToRepresentInputValue()
 public void setBorder()
 {
 
+    // A "!NO_BORDER!" for a title signifies that there should be no border.
+    if ("!NO_BORDER!".equals(title)){
+        return;
+    }
+    
     this.setBorder(BorderFactory.createTitledBorder(
                             BorderFactory.createLineBorder(Color.black), 
                             title));
@@ -257,18 +267,15 @@ public void setBorder()
 public void paintComponent (Graphics g)
 {
 
-        // let the parent class do it's painting, such as the background, border, etc.
-        super.paintComponent(g);
+    // let the parent class do it's painting, such as the background, border, etc.
+    super.paintComponent(g);
 
-        Graphics2D g2 = (Graphics2D) g;
+    Graphics2D g2 = (Graphics2D) g;
 
-        // paint all our children
-
-        for (int i = 0; i < ledArray.length; i++) {
-        
-            ledArray[i].paint(g2);
-        
-        }
+    // paint all our children
+    for (LED ledArray1 : ledArray) {
+        ledArray1.paint(g2);
+    }
 
 }// end of LEDGroup::paintComponent
 //-----------------------------------------------------------------------------

@@ -181,7 +181,31 @@ public void stateChanged(ChangeEvent ce)
     
     String name = c.getName();
         
-    if (name.startsWith("Depth Input Spinner")){
+    if (name.startsWith("Cut Depth Input Spinner")){
+    
+        //Since we know that the Component with the name starting with
+        //"Depth Input Spinner" is an MFloatSpinner (because we created it and
+        // used that name for it), it can safely be cast to an MFloatSpinner.
+        //Since the values in that spinner are meant to be doubles, the
+        //getDoubleValue method is used to retrieve the value.
+        
+        double value = ((MFloatSpinner)c).getDoubleValue();
+    
+        notcherUI.setTextForDataTArea1("" + value);
+
+        //using getDoubleValue as above will often return a value with a long
+        //fractional portion due to binary floating point conversion
+        //imprecision -- using getText returns the value as a string formatted
+        //exactly as that shown in the spinner's text box and will be rounded
+        //off and truncated in the same manner
+        
+        String textValue = ((MFloatSpinner)c).getText();
+        
+        notcherUI.setTextForDataTArea2(textValue);
+        
+    }
+    
+    else if (name.startsWith("Cutting Head Position Spinner")){
     
         //Since we know that the Component with the name starting with
         //"Depth Input Spinner" is an MFloatSpinner (because we created it and

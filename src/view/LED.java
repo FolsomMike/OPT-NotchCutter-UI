@@ -25,7 +25,7 @@ import java.awt.geom.Rectangle2D;
 // class LED
 //
 
-public class LED {
+public class LED extends Object {
     
     Rectangle2D.Double LED;
     

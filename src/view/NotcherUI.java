@@ -23,15 +23,23 @@ import controller.EventHandler;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import toolkit.Tools;
@@ -43,9 +51,8 @@ import toolkit.Tools;
 
 public class NotcherUI extends JPanel implements ActionListener, ChangeListener {
     
-    private EventHandler eventHandler;
+    private final EventHandler eventHandler;
     
-    private JPanel loadAndSaveContainer;
     private JPanel headGuiPanel;
     
     private JTextField dataVersionTField;
@@ -56,24 +63,28 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener 
     private JLabel progressLabel;
     private JLabel currentCuttingHeadPosition;
     
+    private JButton sendTargetDepthBtn;
+    
     // hss wip -- set to private and create a getter
-    public LEDGroup voltageLeds;
-    public LEDGroup currentLeds;
+    public LEDGroup voltageLeds, currentLeds;
+    private LEDGroup powerOKLed, shortLed;
     
-    private MFloatSpinner cutDepthInputSpinner;
-    
-    private int indexNumber;
+    private final int indexNumber;
+    private final int width, height;
     
 //-----------------------------------------------------------------------------
 // NotcherUI::NotcherUI (constructor)
 //
 
-public NotcherUI(EventHandler pEventHandler, int pIndexNumber)
+public NotcherUI(int pWidth, int pHeight, int pIndexNumber,
+                    EventHandler pEventHandler)
 {
-
-    eventHandler = pEventHandler;
+    
+    width = pWidth;
+    height = pHeight;
     indexNumber = pIndexNumber;
-
+    eventHandler = pEventHandler;
+    
 }//end of NotcherUI::NotcherUI (constructor)
 //-----------------------------------------------------------------------------
 
@@ -86,13 +97,13 @@ public NotcherUI(EventHandler pEventHandler, int pIndexNumber)
 public void init()
 {
 
-    Tools.setSizes(this, 300, 400);
+    Tools.setSizes(this, width, height);
     
     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
     
     this.setBorder(BorderFactory.createTitledBorder(
                             BorderFactory.createLineBorder(Color.black), 
-                            "NotcherUI")); // debug hss
+                            "NotcherUI"));
     
     //create user interface: buttons, displays, etc.
     setupGui();
@@ -109,71 +120,251 @@ public void init()
 public void setupGui()
 {
     
-    createCurrentPanel();
+    add(createHeaderPanel());
     
-    createVoltagePanel();
+    //vertical spacer
+    add(Box.createRigidArea(new Dimension(0,3)));
     
-    add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
+    add(createStatusPanel());
     
-    createCutDepthInputSpinner();
+    //vertical spacer
+    add(Box.createRigidArea(new Dimension(0,3)));
     
-    add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-    
-    createLoadAndSaveButtons();
-    
-    add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //create a label to display good/warning/bad system status
-    statusLabel = new JLabel("Status");
-    statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    add(statusLabel);
-
-    add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //create a label to display miscellaneous info
-    infoLabel = new JLabel("Info");
-    infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    add(infoLabel);
-
-    add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //add text field
-    dataVersionTField = new JTextField("unknown");
-    dataVersionTField.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataVersionTField, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataVersionTField.setToolTipText("The data format version.");
-    add(dataVersionTField);
-
-    add(Box.createRigidArea(new Dimension(0,3))); //vertical spacer
-
-    //add text field
-    dataTArea1 = new JTextField("");
-    dataTArea1.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataTArea1, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataTArea1.setToolTipText("A data entry.");
-    add(dataTArea1);
-
-    add(Box.createRigidArea(new Dimension(0,3))); //vertical spacer
-
-    //add text field
-    dataTArea2 = new JTextField("");
-    dataTArea2.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataTArea2, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataTArea2.setToolTipText("A data entry.");
-    add(dataTArea2);
-
-    add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    progressLabel = new JLabel("Progress");
-    progressLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    add(progressLabel);
-
-    add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
+    add(createHeadPanel());
 
 }// end of NotcherUI::setupGui
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createHeaderPanel
+//
+// Creates objects that give basic information about the notcher and adds them 
+// to a returned panel.
+//
+
+public JPanel createHeaderPanel()
+{
+    
+    JPanel outerPanel = new JPanel();
+    JPanel panel;
+    
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(outerPanel, width-10, 30);
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.add(createNamePanel());
+    outerPanel.add(panel);
+    
+    // create a filler to "push" everything in this panel to the right
+    outerPanel.add(Box.createHorizontalGlue());
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.add(createSaveButton());
+    outerPanel.add(panel);
+    
+    return outerPanel;
+    
+}// end of NotcherUI::createHeaderPanel
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createNamePanel
+//
+// Creates objects used for the notcher name and adds them to a returned panel.
+//
+
+public JPanel createNamePanel()
+{
+    
+    JPanel panel;
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    panel.add(createNameAndNameValueLabels());
+
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(10,0)));
+    
+    //add a button
+    JButton changeNameBtn = new JButton("Change");
+    changeNameBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    changeNameBtn.setActionCommand("Change name of unit");
+    changeNameBtn.addActionListener(this);
+    changeNameBtn.setToolTipText("Change the name of this unit");
+    Tools.setSizes(changeNameBtn, 80, 20);
+    panel.add(changeNameBtn);
+    
+    return panel;
+    
+}// end of NotcherUI::createNamePanel
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createNameAndNameValueLabels
+//
+// Creates the labels for the name label ("Name:") and the value of the name
+//
+
+public JPanel createNameAndNameValueLabels()
+{
+    
+    JPanel panel;
+    Font font;
+    Font newFont;
+    
+    // add a containing JPanel to place the labels next to each other
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    
+    // hss wip -- value for name should be passed in from elsewhere
+    String nameString = "Notcher 1";
+    
+    // create a label to display the name of the notcher
+    JLabel nameLabel = new JLabel("Name: ");
+    nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    // gets the current font of the label
+    font = nameLabel.getFont();
+    // creates a new font with the same font type and size as the label already 
+    // has but with bold
+    newFont = new Font(font.getFontName(), Font.BOLD, 15);
+    nameLabel.setFont(newFont);
+    nameLabel.setToolTipText("This notcher is named: " + nameString);
+    panel.add(nameLabel);
+    
+    // create a label to display the name of the notcher
+    JLabel nameValueLabel = new JLabel(nameString);
+    nameValueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    // gets the current font of the label
+    font = nameValueLabel.getFont();
+    // creates a new font with the same font type and style but with increased
+    // size
+    newFont = new Font (font.getFontName(), Font.PLAIN, 15);
+    nameValueLabel.setFont(newFont);
+    nameValueLabel.setToolTipText("This notcher is named: " + nameString);
+    panel.add(nameValueLabel);
+    
+    return panel;
+    
+}// end of NotcherUI::createNameAndNameValueLabels
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createSaveButton
+//
+// Creates buttons and adds them to a returned panel.
+//
+
+public JPanel createSaveButton()
+{
+    
+    JPanel panel;
+    
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(panel, 65, 20);
+    
+    //add a button
+    JButton saveBtn = new JButton("Save");
+    saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    saveBtn.setActionCommand("Save Data To File");
+    saveBtn.addActionListener(this);
+    saveBtn.setToolTipText("Save data to file.");
+    panel.add(saveBtn);
+    
+    return panel;
+    
+}// end of NotcherUI::createSaveButton
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createStatusPanel
+//
+// Creates a panel for status information such as: power status, current,
+// voltage, etc.
+//
+
+public JPanel createStatusPanel()
+{
+    
+    JPanel outerPanel = new JPanel();
+    JPanel panel;
+    
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    // add voltage and current panels
+    panel.add(createCurrentPanel());
+    panel.add(createVoltagePanel());
+    outerPanel.add(panel);
+    
+    //horizontal spacer
+    outerPanel.add(Box.createRigidArea(new Dimension(15,0)));
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    // add power status objects to panel
+    panel.add(createPowerStatusPanel());
+    outerPanel.add(panel);
+    
+    return outerPanel;
+    
+}// end of NotcherUI::createStatusPanel
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createPowerStatusPanel
+//
+// Creates objects used for the PowerOK status and for the Short status and adds
+// them to a returned panel.
+//
+
+public JPanel createPowerStatusPanel()
+{
+    
+    JPanel panel;
+    
+    // create a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    // add an led for the PowerOK status
+    powerOKLed = new LEDGroup("PowerOK", 1, 15, 15, 0, 55, 10, Color.GREEN, 
+                   panel.getBackground());
+    powerOKLed.init();
+    powerOKLed.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.add(powerOKLed);
+    
+    //vertical spacer
+    //debug hss//panel.add(Box.createRigidArea(new Dimension(5,0)));
+    
+    // add an led for the Short status
+    shortLed = new LEDGroup("Short", 1, 15, 15, 0, 30, 10, Color.RED, 
+                   panel.getBackground());
+    shortLed.init();
+    shortLed.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.add(shortLed);
+    
+    return panel;
+    
+}// end of NotcherUI::createPowerStatusPanel
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -183,15 +374,24 @@ public void setupGui()
 // to the panel.
 //
 
-public void createCurrentPanel()
+public JPanel createCurrentPanel()
 {
     
-    currentLeds = new LEDGroup("Current", 10, 20, 10, Color.RED, 
+    JPanel panel;
+    
+    // create a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    currentLeds = new LEDGroup("Current", 10, 20, 10, 0, 16, 10, Color.RED, 
                                 getBackground()); 
     currentLeds.init();
     currentLeds.setRange(0, 10);
     currentLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
-    add(currentLeds);
+    panel.add(currentLeds);
+    
+    return panel;
     
 }// end of NotcherUI::createCurrentPanel
 //-----------------------------------------------------------------------------
@@ -203,116 +403,221 @@ public void createCurrentPanel()
 // the panel.
 //
 
-public void createVoltagePanel()
+public JPanel createVoltagePanel()
 {
+ 
+    JPanel panel;
     
-    voltageLeds = new LEDGroup("Voltage", 10, 20, 10, Color.GREEN, 
+    // create a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    voltageLeds = new LEDGroup("Voltage", 10, 20, 10, 0, 16, 10, Color.GREEN, 
                                 getBackground()); 
     voltageLeds.init();
     voltageLeds.setRange(0, 10);
     voltageLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
-    add(voltageLeds);
+    panel.add(voltageLeds);
+    
+    //add a button
+    JButton voltageStatusBtn = new JButton("Voltage is on" );
+    voltageStatusBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    voltageStatusBtn.setActionCommand("Change status of voltage");
+    voltageStatusBtn.addActionListener(this);
+    voltageStatusBtn.setToolTipText("Turn voltage off");
+    Tools.setSizes(voltageStatusBtn, 105, 20);
+    panel.add(voltageStatusBtn);
+    
+    return panel;
     
 }// end of NotcherUI::createVoltagePanel
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherUI::createCutDepthInputSpinner
+// NotcherUI::createHeadPanel
 //
-// Creates an MFloatSpinner object and adds it to the mainPanel.
+// Creates a panel to contain things pertaining to the "Head".
 //
 
-public void createCutDepthInputSpinner()
+public JPanel createHeadPanel()
 {
+    
+    JPanel outerPanel;
+    JPanel panel;
+    
+    // add a containing JPanel
+    outerPanel = new JPanel();
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(outerPanel, 305, 75);
+    outerPanel.setBorder(BorderFactory.createTitledBorder(
+                            BorderFactory.createLineBorder(Color.black), 
+                            "Head"));
+
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(panel, 290, 20);
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    
+    //create a label to display the head's current cutting position
+    // hss wip value for label should be passed in from elsewhere
+    JLabel positionLbl = new JLabel("Postion: " + "0.01");
+    positionLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+    positionLbl.setToolTipText("");
+    panel.add(positionLbl);
+    
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(10,0)));
+    
+    //create a label to display the head's current cutting position
+    panel.add(createCuttingHeadPositionSpinner());
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    
+    outerPanel.add(panel);
+    
+    //vertical spacer
+    outerPanel.add(Box.createRigidArea(new Dimension(0,10)));
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(panel, 290, 20);
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    
+    panel.add(createCutDepthInputSpinner());
+    
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(5,0)));
+    
+    panel.add(createApplyButton());
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    
+    outerPanel.add(panel);
+    
+    return outerPanel;
+    
+}// end of NotcherUI::createHeadPanel
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createCuttingHeadPositionSpinner
+//
+// Creates an MFloatSpinner object and returns it.
+//
+
+public JPanel createCuttingHeadPositionSpinner()
+{
+    
+    JPanel outerPanel;
+    
+    // add a containing JPanel
+    outerPanel = new JPanel();
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    //create a label
+    JLabel cuttingHeadPositionLbl = new JLabel("Cutting Head Position: ");
+    cuttingHeadPositionLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+    cuttingHeadPositionLbl.setToolTipText("");
+    outerPanel.add(cuttingHeadPositionLbl);
     
     // hss wip -- some of these values should be passed in and determined
     // from elsewhere
-    cutDepthInputSpinner = new MFloatSpinner(5.5, 1.1, 9.9, 0.1, "##0.0", 
-                                                60, 20);
+    MFloatSpinner cuttingHeadPositionSpinner = new MFloatSpinner(5.5, 1.1, 9.9, 
+                                                                0.1, "##0.0", 
+                                                                60, 20);
+    cuttingHeadPositionSpinner.addChangeListener(this);
+    cuttingHeadPositionSpinner.setName("Cutting Head Position Spinner");
+    cuttingHeadPositionSpinner.setToolTipText("Cutting head position");
+    cuttingHeadPositionSpinner.setAlignmentX(Component.LEFT_ALIGNMENT);
+    outerPanel.add(cuttingHeadPositionSpinner);
+    
+    return outerPanel;
+    
+}// end of NotcherUI::createCuttingHeadPositionSpinner
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createCutDepthInputSpinner
+//
+// Creates an MFloatSpinner object and returns it.
+//
+
+public JPanel createCutDepthInputSpinner()
+{
+    
+    JPanel outerPanel;
+    
+    // add a containing JPanel
+    outerPanel = new JPanel();
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    //create a label
+    JLabel cutDepthLbl = new JLabel("Cut Depth: ");
+    cutDepthLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+    cutDepthLbl.setToolTipText("");
+    outerPanel.add(cutDepthLbl);
+    
+    // hss wip -- some of these values should be passed in and determined
+    // from elsewhere
+    MFloatSpinner cutDepthInputSpinner = new MFloatSpinner(5.5, 1.1, 9.9, 0.1, 
+                                                            "##0.0", 60, 20);
     cutDepthInputSpinner.addChangeListener(this);
-    cutDepthInputSpinner.setName("Depth Input Spinner");
+    cutDepthInputSpinner.setName("Cut Depth Input Spinner");
     cutDepthInputSpinner.setToolTipText("Use this to edit the cut depth");
     cutDepthInputSpinner.setAlignmentX(Component.LEFT_ALIGNMENT);
-    add(cutDepthInputSpinner);
+    outerPanel.add(cutDepthInputSpinner);
+    
+    return outerPanel;
     
 }// end of NotcherUI::createCutDepthInputSpinner
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherUI::createLoadAndSaveButtons
+// NotcherUI::createApplyButton
 //
-// Creates the load and save buttons and adds them to the panel.
+// Creates a JPanel that contains the apply button.
 //
 
-public void createLoadAndSaveButtons()
+public JPanel createApplyButton()
 {
     
-    // add a containing JPanel to put the buttons next to each other instead
-    // of stacked
-    loadAndSaveContainer = new JPanel();
-    loadAndSaveContainer.setLayout(new BoxLayout(loadAndSaveContainer,
-                                                    BoxLayout.X_AXIS));
-    loadAndSaveContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
-    add(loadAndSaveContainer);
+    JPanel outerPanel;
+    
+    // add a containing JPanel
+    outerPanel = new JPanel();
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     //add a button
-    JButton loadBtn = new JButton("Load");
-    loadBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    loadBtn.setActionCommand("Load Data From File");
-    loadBtn.addActionListener(this);
-    loadBtn.setToolTipText("Load data from file.");
-    loadAndSaveContainer.add(loadBtn);
-
-    loadAndSaveContainer.add(Box.createRigidArea(new Dimension(10,0))); //horizontal spacer
-
-    //add a button
-    JButton saveBtn = new JButton("Save");
-    saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    saveBtn.setActionCommand("Save Data To File");
-    saveBtn.addActionListener(this);
-    saveBtn.setToolTipText("Save data to file.");
-    loadAndSaveContainer.add(saveBtn);
+    JButton applyTargetDepthBtn = new JButton("Apply"); 
+    Tools.setSizes(applyTargetDepthBtn, 65, 20);
+    applyTargetDepthBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    applyTargetDepthBtn.setActionCommand("Send target depth to device");
+    applyTargetDepthBtn.addActionListener(this);
+    applyTargetDepthBtn.setToolTipText("Send target depth to device");
+    outerPanel.add(applyTargetDepthBtn);
     
-}// end of NotcherUI::createLoadAndSaveButtons
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// NotcherUI::createHeadGuiPanel
-//
-// Creates a panel -- and all of its components -- that allows users to use
-// a graphical interface to change and view information related to the head.
-//
-
-public void createHeadGuiPanel()
-{
+    return outerPanel;
     
-    // add a containing JPanel to put the buttons next to each other instead
-    // of stacked
-    headGuiPanel = new JPanel();
-    headGuiPanel.setLayout(new BoxLayout(headGuiPanel,
-                                                    BoxLayout.X_AXIS));
-    headGuiPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    add(headGuiPanel);
-    
-    //create a label to display the head's current cutting position
-    // hss wip value for label should be passed in from elsewhere
-    statusLabel = new JLabel("0.01");
-    statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    headGuiPanel.add(statusLabel);
-    
-
-    loadAndSaveContainer.add(Box.createRigidArea(new Dimension(10,0))); //horizontal spacer
-
-    //add a button
-    JButton sendTargetDepthBtn = new JButton("hello");
-    sendTargetDepthBtn.setBackground(Color.black);
-    sendTargetDepthBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    sendTargetDepthBtn.setActionCommand("Send target depth to device");
-    sendTargetDepthBtn.addActionListener(this);
-    sendTargetDepthBtn.setToolTipText("Send target depth to device");
-    loadAndSaveContainer.add(sendTargetDepthBtn);
-    
-}// end of NotcherUI::createHeadGuiPanel
+}// end of NotcherUI::createApplyButton
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
