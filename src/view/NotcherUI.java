@@ -300,8 +300,16 @@ public JPanel createStatusPanel()
     JPanel outerPanel = new JPanel();
     JPanel panel;
     
-    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    // add power status objects to panel
+    panel.add(createPowerStatusPanel());
+    outerPanel.add(panel);
     
     // add a containing JPanel
     panel = new JPanel();
@@ -313,15 +321,7 @@ public JPanel createStatusPanel()
     outerPanel.add(panel);
     
     //horizontal spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(15,0)));
-    
-    // add a containing JPanel
-    panel = new JPanel();
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    // add power status objects to panel
-    panel.add(createPowerStatusPanel());
-    outerPanel.add(panel);
+    outerPanel.add(Box.createRigidArea(new Dimension(10,0)));
     
     return outerPanel;
     
@@ -338,11 +338,21 @@ public JPanel createStatusPanel()
 public JPanel createPowerStatusPanel()
 {
     
+    JPanel outerPanel;
     JPanel panel;
+    
+    outerPanel = new JPanel();
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(outerPanel, 150, 90);
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    outerPanel.add(Box.createHorizontalGlue());
     
     // create a containing JPanel
     panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // add an led for the PowerOK status
@@ -351,9 +361,12 @@ public JPanel createPowerStatusPanel()
     powerOKLed.init();
     powerOKLed.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(powerOKLed);
+    outerPanel.add(panel);
     
-    //vertical spacer
-    //debug hss//panel.add(Box.createRigidArea(new Dimension(5,0)));
+    // create a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // add an led for the Short status
     shortLed = new LEDGroup("Short", 1, 15, 15, 0, 30, 10, Color.RED, 
@@ -361,8 +374,13 @@ public JPanel createPowerStatusPanel()
     shortLed.init();
     shortLed.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(shortLed);
+    outerPanel.add(panel);
     
-    return panel;
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    outerPanel.add(Box.createHorizontalGlue());
+    
+    return outerPanel;
     
 }// end of NotcherUI::createPowerStatusPanel
 //-----------------------------------------------------------------------------
