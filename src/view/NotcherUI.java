@@ -226,18 +226,25 @@ public JPanel createHeaderPanel()
 public JPanel createNamePanel()
 {
     
+    JPanel outerPanel = new JPanel();
     JPanel panel;
+    
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // add a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    
     panel.add(createNameAndNameValueLabels());
-
-    //horizontal spacer
-    panel.add(Box.createRigidArea(new Dimension(10,0)));
+    outerPanel.add(panel);
     
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(45, 0)));
     //add a button
     JButton changeNameBtn = new JButton("Change");
     changeNameBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -246,8 +253,9 @@ public JPanel createNamePanel()
     changeNameBtn.setToolTipText("Change the name of this unit");
     Tools.setSizes(changeNameBtn, 80, 20);
     panel.add(changeNameBtn);
+    outerPanel.add(panel);
     
-    return panel;
+    return outerPanel;
     
 }// end of NotcherUI::createNamePanel
 //-----------------------------------------------------------------------------
