@@ -120,17 +120,58 @@ public void init()
 public void setupGui()
 {
     
-    add(createHeaderPanel());
+    JPanel outerPanel = new JPanel();
+    JPanel panel;
+    
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    panel.add(createHeaderPanel());
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    outerPanel.add(panel);
     
     //vertical spacer
-    add(Box.createRigidArea(new Dimension(0,3)));
+    outerPanel.add(Box.createRigidArea(new Dimension(0,20)));
     
-    add(createStatusPanel());
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    panel.add(createStatusPanel());
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    outerPanel.add(panel);
     
     //vertical spacer
-    add(Box.createRigidArea(new Dimension(0,3)));
+    outerPanel.add(Box.createRigidArea(new Dimension(0,20)));
     
-    add(createHeadPanel());
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    panel.add(createHeadPanel());
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    outerPanel.add(panel);
+    
+    add(outerPanel);
 
 }// end of NotcherUI::setupGui
 //-----------------------------------------------------------------------------
@@ -150,7 +191,6 @@ public JPanel createHeaderPanel()
     
     outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(outerPanel, width-10, 30);
     
     // add a containing JPanel
     panel = new JPanel();
@@ -167,6 +207,9 @@ public JPanel createHeaderPanel()
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(createSaveButton());
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(10, 0)));
+    panel.add(createSettingsButton());
     outerPanel.add(panel);
     
     return outerPanel;
@@ -288,6 +331,36 @@ public JPanel createSaveButton()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// NotcherUI::createSettingsButton
+//
+// Creates a button (gear shaped) and adds it to a returned panel.
+//
+// hss wip
+
+public JPanel createSettingsButton()
+{
+    
+    JPanel panel;
+    
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(panel, 80, 20);
+    
+    //add a button
+    JButton settingsBtn = new JButton("Settings");
+    settingsBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    settingsBtn.setActionCommand("Change settings for this device");
+    settingsBtn.addActionListener(this);
+    settingsBtn.setToolTipText("Change settings for this device.");
+    panel.add(settingsBtn);
+    
+    return panel;
+    
+}// end of NotcherUI::createSettingsButton
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // NotcherUI::createStatusPanel
 //
 // Creates a panel for status information such as: power status, current,
@@ -307,17 +380,45 @@ public JPanel createStatusPanel()
     panel = new JPanel();
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     // add power status objects to panel
     panel.add(createPowerStatusPanel());
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    outerPanel.add(panel);
+    
+    //horizontal spacer
+    outerPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    // add voltage and current panels
+    panel.add(createCurrentPanel());
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     outerPanel.add(panel);
     
     // add a containing JPanel
     panel = new JPanel();
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     // add voltage and current panels
-    panel.add(createCurrentPanel());
     panel.add(createVoltagePanel());
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     outerPanel.add(panel);
     
     //horizontal spacer
@@ -344,11 +445,6 @@ public JPanel createPowerStatusPanel()
     outerPanel = new JPanel();
     outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(outerPanel, 150, 90);
-    
-    // create a filler to "push" everything in this panel to the center -- only
-    // works to "push" to the center if another glue is used
-    outerPanel.add(Box.createHorizontalGlue());
     
     // create a containing JPanel
     panel = new JPanel();
@@ -363,6 +459,9 @@ public JPanel createPowerStatusPanel()
     panel.add(powerOKLed);
     outerPanel.add(panel);
     
+    //horizontal spacer
+    outerPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+    
     // create a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
@@ -375,10 +474,6 @@ public JPanel createPowerStatusPanel()
     shortLed.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(shortLed);
     outerPanel.add(panel);
-    
-    // create a filler to "push" everything in this panel to the center -- only
-    // works to "push" to the center if another glue is used
-    outerPanel.add(Box.createHorizontalGlue());
     
     return outerPanel;
     
