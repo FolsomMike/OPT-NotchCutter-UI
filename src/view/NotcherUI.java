@@ -199,8 +199,8 @@ public JPanel createHeaderPanel()
     panel.add(createNamePanel());
     outerPanel.add(panel);
     
-    // create a filler to "push" everything in this panel to the right
-    outerPanel.add(Box.createHorizontalGlue());
+    //horizontal spacer
+    outerPanel.add(Box.createRigidArea(new Dimension(100, 0)));
     
     // add a containing JPanel
     panel = new JPanel();
@@ -345,14 +345,25 @@ public JPanel createSettingsButton()
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(panel, 80, 20);
     
-    //add a button
-    JButton settingsBtn = new JButton("Settings");
+    //create an icon with the specified path
+    ImageIcon gearIcon = View.createImageIcon("images/settingsGear.png");
+    ImageIcon gearIconRollover = View.createImageIcon
+                                            ("images/settingsGearRollover.png");
+    //create and add a button to panel
+    JButton settingsBtn = new JButton(gearIcon);
+    Tools.setSizes(settingsBtn, 20, 20);
+    settingsBtn.setRolloverIcon(gearIconRollover);
+    settingsBtn.setRolloverEnabled(true);
     settingsBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    settingsBtn.setActionCommand("Change settings for this device");
+    settingsBtn.setActionCommand
+                            ("Change the tools and settings for this device");
     settingsBtn.addActionListener(this);
-    settingsBtn.setToolTipText("Change settings for this device.");
+    settingsBtn.setToolTipText("Change the tools and settings for this device");
+    settingsBtn.setBorderPainted(false); 
+    settingsBtn.setContentAreaFilled(false); 
+    settingsBtn.setFocusPainted(false); 
+    settingsBtn.setOpaque(false);
     panel.add(settingsBtn);
     
     return panel;
