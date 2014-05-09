@@ -102,7 +102,7 @@ public void init()
     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
     
     this.setBorder(BorderFactory.createTitledBorder(
-                            BorderFactory.createLineBorder(Color.black), 
+                            BorderFactory.createLineBorder(Color.black),
                             "NotcherUI"));
     
     //create user interface: buttons, displays, etc.
@@ -140,7 +140,7 @@ public void setupGui()
     outerPanel.add(panel);
     
     //vertical spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(0,20)));
+    outerPanel.add(Box.createRigidArea(new Dimension(0,10)));
     
     // add a containing JPanel
     panel = new JPanel();
