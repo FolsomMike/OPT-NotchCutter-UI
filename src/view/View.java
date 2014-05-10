@@ -129,6 +129,10 @@ public void init()
 
     //arrange all the GUI items
     mainFrame.pack();
+    
+    centerJFrame(mainFrame);
+    
+    mainFrame.setResizable(false);
 
     //display the main frame
     mainFrame.setVisible(true);
@@ -170,9 +174,6 @@ public void setupMainFrame()
         }
 
     mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    //    setLocation((int)screenSize.getWidth() - getWidth(), 0);
 
 }// end of View::setupMainFrame
 //-----------------------------------------------------------------------------
@@ -234,6 +235,8 @@ public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
     }
     
     mainFrame.pack();
+    
+    centerJFrame(mainFrame);
     
     return tempNotcherUI;
 
@@ -411,6 +414,24 @@ protected static ImageIcon createImageIcon(String pPath)
     else {return null;}
 
 }//end of View::createImageIcon
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::centerJFrame
+//
+// Centers a passed in Jframe according to the screen size and JFrame's size.
+//
+
+public void centerJFrame(JFrame pFrame)
+{
+    
+    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    pFrame.setLocation((int)screenSize.getWidth()/2 - 
+                            (int)pFrame.getWidth()/2, 
+                            (int)screenSize.getHeight()/2 - 
+                            (int)pFrame.getHeight()/2);
+
+}// end of View::centerJFrame
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

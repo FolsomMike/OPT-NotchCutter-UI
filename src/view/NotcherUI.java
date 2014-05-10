@@ -210,7 +210,7 @@ public JPanel createHeaderPanel()
     outerPanel.add(panel);
     
     //horizontal spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(100, 0)));
+    outerPanel.add(Box.createRigidArea(new Dimension(150, 0)));
     
     // add a containing JPanel
     panel = new JPanel();
@@ -218,7 +218,7 @@ public JPanel createHeaderPanel()
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(createSaveButton());
     //horizontal spacer
-    panel.add(Box.createRigidArea(new Dimension(10, 0)));
+    panel.add(Box.createRigidArea(new Dimension(5, 0)));
     panel.add(createSettingsButton());
     outerPanel.add(panel);
     
@@ -330,14 +330,24 @@ public JPanel createSaveButton()
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(panel, 65, 20);
     
-    //add a button
-    JButton saveBtn = new JButton("Save");
+    //create an icon with the specified path
+    ImageIcon saveIcon = View.createImageIcon("images/saveButton.png");
+    ImageIcon saveIconRollover = View.createImageIcon
+                                            ("images/saveButtonRollover.png");
+    //create and add a button to panel
+    JButton saveBtn = new JButton(saveIcon);
+    Tools.setSizes(saveBtn, 20, 20);
+    saveBtn.setRolloverIcon(saveIconRollover);
+    saveBtn.setRolloverEnabled(true);
     saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
     saveBtn.setActionCommand("Save Data To File");
     saveBtn.addActionListener(this);
     saveBtn.setToolTipText("Save data to file.");
+    saveBtn.setBorderPainted(false); 
+    saveBtn.setContentAreaFilled(false); 
+    saveBtn.setFocusPainted(false); 
+    saveBtn.setOpaque(false);
     panel.add(saveBtn);
     
     return panel;
