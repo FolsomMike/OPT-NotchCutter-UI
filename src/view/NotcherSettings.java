@@ -1,15 +1,12 @@
 /******************************************************************************
-* Title: NotcherUI.java
+* Title: NotcherSettings.java
 * Author: Hunter Schoonover
 * Date: 2/3/14
 *
 * Purpose:
 *
-* This class creates a visual interface for a notch cutter.
+* This class creates a window for the notcher unit settings.
 * 
-* All GUI control events for each Notcher interface, including Timer events are 
-* caught by this object and passed on to the "NotcherController" object pointed
-* by the class member "eventHandler" for final handling.
 *
 */
 
@@ -24,16 +21,11 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Label;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -43,7 +35,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
@@ -52,11 +43,11 @@ import toolkit.Tools;
 
 
 //-----------------------------------------------------------------------------
-// class NotcherUI
+// class NotcherSettings
 //
 
-public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
-        WindowListener {
+public class NotcherSettings extends JFrame implements ActionListener, 
+        ChangeListener, WindowListener {
     
     private final EventHandler eventHandler;
     
@@ -72,6 +63,8 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
     
     private JButton sendTargetDepthBtn;
     
+    private NotcherUI notcherUI;
+    
     // hss wip -- set to private and create a getter
     public LEDGroup voltageLeds, currentLeds;
     private LEDGroup powerOKLed, shortLed;
@@ -83,23 +76,19 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
     private final int width, height;
     
 //-----------------------------------------------------------------------------
-// NotcherUI::NotcherUI (constructor)
+// NotcherSettings::NotcherSettings (constructor)
 //
 
-public NotcherUI(int pWidth, int pHeight, int pIndexNumber,
-                    EventHandler pEventHandler)
-{
+public NotcherSettings(NotcherUI pNotcherUI, EventHandler pEventHandler) {
     
-    width = pWidth;
-    height = pHeight;
-    indexNumber = pIndexNumber;
+    notcherUI = pNotcherUI;
     eventHandler = pEventHandler;
     
-}//end of NotcherUI::NotcherUI (constructor)
+}//end of NotcherSettings::NotcherSettings (constructor)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherUI::init
+// NotcherSettings::init
 //
 // Initializes the object.  Must be called immediately after instantiation.
 //
@@ -107,22 +96,56 @@ public NotcherUI(int pWidth, int pHeight, int pIndexNumber,
 public void init()
 {
 
-    Tools.setSizes(this, width, height);
-    
-    setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-    
-    this.setBorder(BorderFactory.createTitledBorder(
-                            BorderFactory.createLineBorder(Color.black),
-                            "NotcherUI"));
+    setupMainFrame();
     
     //create user interface: buttons, displays, etc.
     setupGui();
 
-}//end of NotcherUI::init
+}//end of NotcherSettings::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherUI::setupGui
+// NotcherSettings::setupMainFrame
+//
+// Sets various options and styles for the main frame.
+//
+
+public void setupMainFrame()
+{
+
+    JFrame mainFrame = new JFrame(notcherName + " Settings");
+
+    //add a JPanel to the frame to provide a familiar container
+    JPanel mainPanel = new JPanel();
+    mainFrame.setContentPane(mainPanel);
+
+    //set the min/max/preferred sizes of the panel to set the size of the frame
+    Tools.setSizes(mainPanel, 600, 600);
+
+    mainFrame.addWindowListener(this);
+
+    //turn off default bold for Metal look and feel
+    UIManager.put("swing.boldMetal", Boolean.FALSE);
+
+    //force "look and feel" to Java style
+    try {
+        UIManager.setLookAndFeel(
+            UIManager.getCrossPlatformLookAndFeelClassName());
+        }
+    catch (ClassNotFoundException | InstantiationException |
+            IllegalAccessException | UnsupportedLookAndFeelException e) {
+        System.out.println("Could not set Look and Feel");
+        }
+
+    mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+    centerJFrame(mainFrame);
+
+}// end of NotcherSettings::setupMainFrame
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherSettings::setupGui
 //
 // Sets up the user interface on the mainPanel: buttons, displays, etc.
 //
@@ -183,7 +206,7 @@ public void setupGui()
     
     add(outerPanel);
 
-}// end of NotcherUI::setupGui
+}// end of NotcherSettings::setupGui
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -767,11 +790,77 @@ public JPanel createApplyButton()
 
 public void createSettingsWindow()
 {
+    GuiUpdater guiUpdater;
     
-    NotcherSettings notcherSettings = new NotcherSettings(this, eventHandler);
-    notcherSettings.init();
+    JFrame settingsFrame;
+    
+    // setup the settingsFrame
+    settingsFrame = new JFrame(notcherName + " Settings");
+
+    //add a JPanel to the frame to provide a familiar container
+    JPanel mainPanel = new JPanel();
+    settingsFrame.setContentPane(mainPanel);
+
+    //set the min/max/preferred sizes of the panel to set the size of the frame
+    Tools.setSizes(mainPanel, 600, 600);
+
+    settingsFrame.addWindowListener(this);
+
+    //turn off default bold for Metal look and feel
+    UIManager.put("swing.boldMetal", Boolean.FALSE);
+
+    //force "look and feel" to Java style
+    try {
+        UIManager.setLookAndFeel(
+            UIManager.getCrossPlatformLookAndFeelClassName());
+        }
+    catch (ClassNotFoundException | InstantiationException |
+            IllegalAccessException | UnsupportedLookAndFeelException e) {
+        System.out.println("Could not set Look and Feel");
+        }
+
+    settingsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+    centerJFrame(settingsFrame);
+    
+    //create an object to handle thread safe updates of GUI components
+    guiUpdater = new GuiUpdater(settingsFrame);
+    guiUpdater.init();
+
+    //create various fonts for use by the program
+    createFonts();
+
+    //setup the gui for settings
+    //create user interface: buttons, displays, etc.
+    
+
+    //arrange all the GUI items
+    settingsFrame.pack();
+
+    //display the main frame
+    settingsFrame.setVisible(true);
 
 }// end of NotcherUI::createSettingsWindow
+//-----------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------
+// NotcherUI::centerJFrame
+//
+// Centers a passed in Jframe according to the screen size and JFrame's size.
+//
+
+public void centerJFrame(JFrame pFrame)
+{
+    
+    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    pFrame.setLocation((int)screenSize.getWidth()/2 - 
+                            (int)pFrame.getWidth()/2, 
+                            (int)screenSize.getHeight()/2 - 
+                            (int)pFrame.getHeight()/2);
+
+}// end of NotcherUI::centerJFrame
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

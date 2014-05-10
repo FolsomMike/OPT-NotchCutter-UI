@@ -215,7 +215,7 @@ public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
 
     NotcherUI tempNotcherUI;
     
-    tempNotcherUI = new NotcherUI(425, 325, pIndexNumber, pEventHandler);
+    tempNotcherUI = new NotcherUI(350, 325, pIndexNumber, pEventHandler);
     
     tempNotcherUI.init();
     
@@ -441,7 +441,7 @@ public void windowClosing(WindowEvent e)
 
     eventHandler.windowClosing(e);
 
-}//end of Controller::windowClosing
+}//end of View::windowClosing
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
