@@ -28,6 +28,7 @@ import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import javax.swing.BorderFactory;
@@ -900,6 +901,7 @@ public JPanel createChangeNameApplyAndCancelButtons()
     Tools.setSizes(applyNewNameBtn, 65, 20);
     applyNewNameBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
     applyNewNameBtn.setActionCommand("Apply this name to the unit");
+    applyNewNameBtn.setMnemonic(KeyEvent.VK_ENTER);
     applyNewNameBtn.addActionListener(this);
     applyNewNameBtn.setToolTipText("Apply this name to " + notcherName);
     panel.add(applyNewNameBtn);
