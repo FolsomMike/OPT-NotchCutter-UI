@@ -5,7 +5,7 @@
 *
 * Purpose:
 *
-* This class creates a window for the notcher unit settings.
+* This class creates a JDialog for the notcher unit settings.
 * 
 *
 */
@@ -17,20 +17,14 @@ package view;
 //-----------------------------------------------------------------------------
 
 import controller.EventHandler;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
@@ -38,13 +32,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import toolkit.Tools;
 
 
@@ -166,7 +154,7 @@ public void setupContentPane()
     //add a JPanel to the frame to provide a familiar container
     mainPanel = new JPanel();
     //set the min/max/preferred sizes of the panel to set the size of the frame
-    Tools.setSizes(mainPanel, 600, 600);
+    Tools.setSizes(mainPanel, 300, 90);
     setContentPane(mainPanel);
 
 }// end of NotcherSettings::setupContentPane
@@ -184,14 +172,20 @@ public void setupGui()
     JPanel outerPanel = new JPanel();
     JPanel panel;
     
-    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(outerPanel, 300, 90);
     
     // add a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(createModeSelectionPanel());
+    
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(20,0)));
+    
+    panel.add(createStartCycleTestButton());
     outerPanel.add(panel);
     
     //vertical spacer
@@ -201,19 +195,10 @@ public void setupGui()
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    panel.add(createStartCycleTestButton());
-    outerPanel.add(panel);
-    
-    //vertical spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(0,20)));
-    
-    // add a containing JPanel
-    panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     // create a filler to "push" everything in this panel to the center -- only
     // works to "push" to the center if another glue is used
     panel.add(Box.createHorizontalGlue());
+    panel.add(createLockToolsAndSettingsButton());
     // create a filler to "push" everything in this panel to the center -- only
     // works to "push" to the center if another glue is used
     panel.add(Box.createHorizontalGlue());
@@ -248,6 +233,7 @@ public JPanel createModeSelectionPanel()
     //Create the radio buttons.
     //hsswip -- more info on modes
     JRadioButton notchModeRadBtn = new JRadioButton("notch mode");
+    notchModeRadBtn.setSelected(true);
     notchModeRadBtn.setActionCommand("Switch to notch mode");
     notchModeRadBtn.addActionListener(actionListener);
     notchModeRadBtn.setToolTipText("Switch to notch mode");
@@ -299,7 +285,7 @@ public JPanel createStartCycleTestButton()
     cycleTestStartAndStopBtn.setActionCommand("Change name of unit");
     cycleTestStartAndStopBtn.addActionListener(actionListener);
     cycleTestStartAndStopBtn.setToolTipText("Change the name of this unit");
-    Tools.setSizes(cycleTestStartAndStopBtn, 80, 20);
+    Tools.setSizes(cycleTestStartAndStopBtn, 150, 20);
     panel.add(cycleTestStartAndStopBtn);
     outerPanel.add(panel);
     
@@ -325,10 +311,11 @@ public JPanel createLockToolsAndSettingsButton()
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     //create and add a button to outerPanel
-    JCheckBox lockToolsAndSettingsButton = new JCheckBox("Chin");
+    JCheckBox lockToolsAndSettingsButton = new JCheckBox
+                                                    ("Lock Tools and Settings");
     lockToolsAndSettingsButton.setActionCommand
                                 ("Lock the tools and settings on this device so"
-                                        + "they may not be changed");
+                                        + " that they may not be changed");
     lockToolsAndSettingsButton.addActionListener(actionListener);
     lockToolsAndSettingsButton.setToolTipText
                                 ("Lock the tools and settings on this device so"
