@@ -52,8 +52,9 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
         WindowListener {
     
     private final EventHandler eventHandler;
-    private final NotcherSettings notcherSettings;
     private final JFrame mainFrame;
+    
+    private NotcherSettings notcherSettings;
     
     private JPanel headGuiPanel;
     
@@ -83,7 +84,6 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
 //
 
 public NotcherUI(int pWidth, int pHeight, int pIndexNumber, JFrame pMainFrame,
-                    NotcherSettings pNotcherSettings, 
                     EventHandler pEventHandler)
 {
     
@@ -91,7 +91,6 @@ public NotcherUI(int pWidth, int pHeight, int pIndexNumber, JFrame pMainFrame,
     height = pHeight;
     indexNumber = pIndexNumber;
     mainFrame = pMainFrame;
-    notcherSettings = pNotcherSettings;
     eventHandler = pEventHandler;
     
 }//end of NotcherUI::NotcherUI (constructor)
@@ -117,7 +116,7 @@ public void init()
     //create user interface: buttons, displays, etc.
     setupGui();
     
-    initiateNotcherSettings();
+    createNotcherSettings();
 
 }//end of NotcherUI::init
 //-----------------------------------------------------------------------------
@@ -772,19 +771,20 @@ public JPanel createApplyButton()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherUI::initiateNotcherSettings
+// NotcherUI::createNotcherSettings
 //
-// Initiates the Settings given to this notcherUI and makes the JDialog
-// invisible.
+// Creates and initializes a notcherSettings for this unit.
 //
 
-public void initiateNotcherSettings()
+public void createNotcherSettings()
 {
     
-    notcherSettings.init(notcherName, eventHandler, this, this);
+    notcherSettings = new NotcherSettings(notcherName, mainFrame, eventHandler, 
+                                                                    this, this);
+    notcherSettings.init();
     notcherSettings.setVisible(false);
 
-}// end of NotcherUI::initiateNotcherSettings
+}// end of NotcherUI::createNotcherSettings
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -797,7 +797,7 @@ public void initiateNotcherSettings()
 public void ActivateNotcherSettings()
 {
     
-    notcherSettings.setVisible(true);
+    notcherSettings.setVisibleState(true);
 
 }// end of NotcherUI::ActivateNotcherSettings
 //-----------------------------------------------------------------------------
@@ -873,7 +873,7 @@ public void createChangeNameDialog()
     
     mainPanel.add(panel);
     
-    centerJDialog(changeNameDialog);
+    centerJDialog(changeNameDialog, mainFrame);
     
     changeNameDialog.setVisible(true);
     
@@ -884,6 +884,7 @@ public void createChangeNameDialog()
 // NotcherUI::changeNotcherName
 //
 // Changes the name of the notcher unit to the value of the changeNameTextField.
+// Changes various strings and resets various objects that use notcherName.
 //
 
 public void changeNotcherName()
@@ -894,7 +895,7 @@ public void changeNotcherName()
     //reset various items that use the notcherName
     changeNameDialog.setTitle("Change the Name of: " + notcherName);
     nameValueLabel.setText(notcherName);
-    notcherSettings.setTitle(notcherName + " Settings");
+    notcherSettings.setNames(notcherName);
 
 }// end of NotcherUI::changeNotcherName
 //-----------------------------------------------------------------------------
@@ -928,21 +929,33 @@ public void setTextForDataTArea2(String pText)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherSettings::centerJDialog
+// NotcherUI::centerJDialog
 //
-// Centers a passed in JDialog according to the screen size and JDialog's size.
+// Centers a passed in JDialog according to the location and size of the passed
+// in parent frame and the JDialog's size.
 //
 
-public void centerJDialog(JDialog pDialog)
+public void centerJDialog(JDialog pDialog, JFrame pParentFrame)
 {
-    
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    pDialog.setLocation((int)screenSize.getWidth()/2 - 
-                            (int)pDialog.getWidth()/2, 
-                            (int)screenSize.getHeight()/2 - 
-                            (int)pDialog.getHeight()/2);
 
-}// end of NotcherSettings::centerJDialog
+    int parentFrameXPos = (int)pParentFrame.getX();
+    int parentFrameHalfWidth = (int)pParentFrame.getWidth()/2;
+    
+    int parentFrameYPos = (int)pParentFrame.getY();
+    int parentFrameHalfHeight = (int)pParentFrame.getHeight()/2;
+    
+    int parentFrameXCenter = parentFrameXPos + parentFrameHalfWidth;
+    int parentFrameYCenter = parentFrameYPos + parentFrameHalfHeight;
+    
+    int dialogWidthCenter = (int)pDialog.getWidth()/2;
+    int dialogHeightCenter = (int)pDialog.getHeight()/2;
+    
+    int xPosition = parentFrameXCenter - dialogWidthCenter;
+    int yPosition = parentFrameYCenter - dialogHeightCenter;
+    
+    pDialog.setLocation(xPosition, yPosition);
+
+}// end of NotcherUI::centerJDialog
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

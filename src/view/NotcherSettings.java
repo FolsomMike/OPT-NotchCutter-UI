@@ -46,6 +46,8 @@ public class NotcherSettings extends JDialog {
     private WindowListener windowListener;
     private ActionListener actionListener;
     
+    private final JFrame parentFrame;
+    
     private JPanel mainPanel;
     
     private JTextField dataVersionTField;
@@ -65,15 +67,24 @@ public class NotcherSettings extends JDialog {
     private LEDGroup powerOKLed, shortLed;
     
     private String notcherName;
-    private String dialogueName;
+    private String dialogName;
     
 //-----------------------------------------------------------------------------
 // NotcherSettings::NotcherSettings (constructor)
 //
 
-public NotcherSettings(JFrame pParentFrame) {
+public NotcherSettings(String pNotcherName, JFrame pParentFrame, 
+                        EventHandler pEventHandler, 
+                        WindowListener pWindowListener, 
+                        ActionListener pActionListener) {
     
     super(pParentFrame);
+    
+    parentFrame = pParentFrame;
+    notcherName = pNotcherName;
+    eventHandler = pEventHandler;
+    windowListener = pWindowListener;
+    actionListener = pActionListener;
     
 }//end of NotcherSettings::NotcherSettings (constructor)
 //-----------------------------------------------------------------------------
@@ -84,14 +95,10 @@ public NotcherSettings(JFrame pParentFrame) {
 // Initializes the object.  Must be called immediately after instantiation.
 //
 
-public void init(String pNotcherName, EventHandler pEventHandler, 
-                    WindowListener pWindowListener, 
-                    ActionListener pActionListener)
+public void init()
 {
-
-    setListeners(pEventHandler, pWindowListener, pActionListener);
     
-    setNames(pNotcherName);
+    setNames(notcherName);
     
     setupContentPane();
     
@@ -100,29 +107,8 @@ public void init(String pNotcherName, EventHandler pEventHandler,
     
     //arrange all the GUI items
     pack();
-    
-    centerJDialog(this);
 
 }//end of NotcherSettings::init
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// NotcherSettings::setListeners
-//
-// Sets passed in listeners required for user interaction with Settings to
-// preexisting variables.
-//
-
-public void setListeners(EventHandler pEventHandler, 
-                            WindowListener pWindowListener, 
-                            ActionListener pActionListener)
-{
-    
-    eventHandler = pEventHandler;
-    windowListener = pWindowListener;
-    actionListener = pActionListener;
-
-}//end of NotcherSettings::setListeners
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -135,11 +121,11 @@ public void setNames(String pNotcherName)
 {
 
     notcherName = pNotcherName;
-    dialogueName = pNotcherName + " Settings";
+    dialogName = "Tools & Settings :: " + pNotcherName;
     //set the title of the dialogue
-    setTitle(dialogueName);
+    setTitle(dialogName);
 
-}//end of NotcherSettings::setNames
+}//end of NotcherSettings::setDialogName
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -329,33 +315,47 @@ public JPanel createLockToolsAndSettingsButton()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherSettings::makeVisible
+// NotcherSettings::setVisibleState
 //
 // Sets this JDialog's visible attribute to the boolean passed in.
 //
 
-public void makeVisible(Boolean pValue)
+public void setVisibleState(Boolean pValue)
 {
     
     setVisible(pValue);
+    
+    centerJDialog(this, parentFrame);
 
-}// end of NotcherSettings::makeVisible
+}// end of NotcherSettings::setVisibleState
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // NotcherSettings::centerJDialog
 //
-// Centers a passed in JDialog according to the screen size and JDialog's size.
+// Centers a passed in JDialog according to the location and size of the passed
+// in parent frame and the JDialog's size.
 //
 
-public void centerJDialog(JDialog pDialog)
+public void centerJDialog(JDialog pDialog, JFrame pParentFrame)
 {
+
+    int parentFrameXPos = (int)parentFrame.getX();
+    int parentFrameHalfWidth = (int)parentFrame.getWidth()/2;
     
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    pDialog.setLocation((int)screenSize.getWidth()/2 - 
-                            (int)pDialog.getWidth()/2, 
-                            (int)screenSize.getHeight()/2 - 
-                            (int)pDialog.getHeight()/2);
+    int parentFrameYPos = (int)parentFrame.getY();
+    int parentFrameHalfHeight = (int)parentFrame.getHeight()/2;
+    
+    int parentFrameXCenter = parentFrameXPos + parentFrameHalfWidth;
+    int parentFrameYCenter = parentFrameYPos + parentFrameHalfHeight;
+    
+    int dialogWidthCenter = (int)pDialog.getWidth()/2;
+    int dialogHeightCenter = (int)pDialog.getHeight()/2;
+    
+    int xPosition = parentFrameXCenter - dialogWidthCenter;
+    int yPosition = parentFrameYCenter - dialogHeightCenter;
+    
+    pDialog.setLocation(xPosition, yPosition);
 
 }// end of NotcherSettings::centerJDialog
 //-----------------------------------------------------------------------------
