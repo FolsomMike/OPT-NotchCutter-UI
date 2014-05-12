@@ -24,6 +24,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -34,6 +35,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -51,6 +53,7 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
     
     private final EventHandler eventHandler;
     private final NotcherSettings notcherSettings;
+    private final JFrame mainFrame;
     
     private JPanel headGuiPanel;
     
@@ -78,7 +81,7 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
 // NotcherUI::NotcherUI (constructor)
 //
 
-public NotcherUI(int pWidth, int pHeight, int pIndexNumber, 
+public NotcherUI(int pWidth, int pHeight, int pIndexNumber, JFrame pMainFrame,
                     NotcherSettings pNotcherSettings, 
                     EventHandler pEventHandler)
 {
@@ -86,6 +89,7 @@ public NotcherUI(int pWidth, int pHeight, int pIndexNumber,
     width = pWidth;
     height = pHeight;
     indexNumber = pIndexNumber;
+    mainFrame = pMainFrame;
     notcherSettings = pNotcherSettings;
     eventHandler = pEventHandler;
     
@@ -132,7 +136,7 @@ public void setupGui()
     outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    // add a containing JPanel
+    //add a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -806,23 +810,68 @@ public void ActivateNotcherSettings()
 public void createChangeNameDialog()
 {
     
-    JDialog changeNameDialog = new JDialog();
-    Tools.setSizes(changeNameDialog, 300, 300);
+    JPanel panel;
+    
+    JDialog changeNameDialog = new JDialog(mainFrame);
+    Tools.setSizes(changeNameDialog, 300, 100);
     
     changeNameDialog.setTitle("Change the Name of this Unit");
     
     JPanel mainPanel = new JPanel();
-    Tools.setSizes(mainPanel, 300, 300);
+    mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+    Tools.setSizes(mainPanel, 300, 100);
     changeNameDialog.setContentPane(mainPanel);
     
+    //vertical spacer
+    mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    
     //add text field
-    JTextField changeNameTextField = new JTextField(notcherName);
+    JTextField changeNameTextField = new JTextField("Enter new name...");
     changeNameTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
     changeNameTextField.selectAll();
-    Tools.setSizes(changeNameTextField, 100, 24);
+    Tools.setSizes(changeNameTextField, 150, 24);
     //text fields don't have action commands or action listeners
     changeNameTextField.setToolTipText("Enter a new name for this unit.");
-    mainPanel.add(changeNameTextField);
+    panel.add(changeNameTextField);
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    
+    mainPanel.add(panel);
+    
+    // add a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    
+    //add a button
+    JButton applyNewNameBtn = new JButton("Apply"); 
+    Tools.setSizes(applyNewNameBtn, 65, 20);
+    applyNewNameBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    applyNewNameBtn.setActionCommand("Apply this name to the unit");
+    applyNewNameBtn.addActionListener(this);
+    applyNewNameBtn.setToolTipText("Apply this name to the unit");
+    panel.add(applyNewNameBtn);
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
+    
+    mainPanel.add(panel);
+    
+    centerJDialog(changeNameDialog);
     
     changeNameDialog.setVisible(true);
     
@@ -855,6 +904,24 @@ public void setTextForDataTArea2(String pText)
     dataTArea2.setText(pText);
 
 }// end of NotcherUI::setTextForDataTArea2
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherSettings::centerJDialog
+//
+// Centers a passed in JDialog according to the screen size and JDialog's size.
+//
+
+public void centerJDialog(JDialog pDialog)
+{
+    
+    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    pDialog.setLocation((int)screenSize.getWidth()/2 - 
+                            (int)pDialog.getWidth()/2, 
+                            (int)screenSize.getHeight()/2 - 
+                            (int)pDialog.getHeight()/2);
+
+}// end of NotcherSettings::centerJDialog
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
