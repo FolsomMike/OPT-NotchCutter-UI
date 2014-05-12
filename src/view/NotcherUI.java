@@ -22,6 +22,7 @@ package view;
 import controller.EventHandler;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Toolkit;
@@ -37,6 +38,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
@@ -75,6 +77,7 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
     
     // hsswip -- name should be set elswhere
     private String notcherName = "NotcherUI";
+    private String previousNotcherName;
     
     private final int indexNumber;
     private final int width, height;
@@ -812,8 +815,6 @@ public void ActivateNotcherSettings()
 public void createChangeNameDialog()
 {
     
-    JPanel panel;
-    
     changeNameDialog = new JDialog(mainFrame);
     Tools.setSizes(changeNameDialog, 300, 100);
     
@@ -827,8 +828,31 @@ public void createChangeNameDialog()
     //vertical spacer
     mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
     
+    mainPanel.add(createChangeNameTextField());
+    
+    mainPanel.add(createChangeNameApplyAndCancelButtons());;
+    
+    centerJDialog(changeNameDialog, mainFrame);
+    
+    changeNameDialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+    
+    changeNameDialog.setVisible(true);
+    
+}// end of NotcherUI::createChangeNameDialog
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createChangeNameTextField
+//
+// Creates a JTextField (used for the user input of a new notcherName) and adds 
+// it to a returned panel.
+//
+
+public JPanel createChangeNameTextField()
+{
+    
     // add a containing JPanel
-    panel = new JPanel();
+    JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     // create a filler to "push" everything in this panel to the center -- only
@@ -839,7 +863,7 @@ public void createChangeNameDialog()
     changeNameTextField = new JTextField("Enter new name...");
     changeNameTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
     changeNameTextField.selectAll();
-    Tools.setSizes(changeNameTextField, 150, 24);
+    Tools.setSizes(changeNameTextField, 175, 24);
     //text fields don't have action commands or action listeners
     changeNameTextField.setToolTipText("Enter a new name for this unit.");
     panel.add(changeNameTextField);
@@ -848,10 +872,23 @@ public void createChangeNameDialog()
     // works to "push" to the center if another glue is used
     panel.add(Box.createHorizontalGlue());
     
-    mainPanel.add(panel);
+    return panel;
+
+}// end of NotcherUI::createChangeNameTextField
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createChangeNameApplyAndCancelButtons
+//
+// Creates buttons (used for applying and canceling the process of changing
+// the notcherName) and adds them to a returned panel.
+//
+
+public JPanel createChangeNameApplyAndCancelButtons()
+{
     
     // add a containing JPanel
-    panel = new JPanel();
+    JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     // create a filler to "push" everything in this panel to the center -- only
@@ -859,25 +896,35 @@ public void createChangeNameDialog()
     panel.add(Box.createHorizontalGlue());
     
     //add a button
-    JButton applyNewNameBtn = new JButton("Apply"); 
+    JButton applyNewNameBtn = new JButton("Ok"); 
     Tools.setSizes(applyNewNameBtn, 65, 20);
     applyNewNameBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
     applyNewNameBtn.setActionCommand("Apply this name to the unit");
     applyNewNameBtn.addActionListener(this);
-    applyNewNameBtn.setToolTipText("Apply this name to the unit");
+    applyNewNameBtn.setToolTipText("Apply this name to " + notcherName);
     panel.add(applyNewNameBtn);
+    
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(5, 0)));
+    
+    //add a button
+    JButton cancelBtn = new JButton("Cancel"); 
+    Tools.setSizes(cancelBtn, 75, 20);
+    cancelBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    cancelBtn.setActionCommand
+                        ("Cancel the process of changing the name of the unit");
+    cancelBtn.addActionListener(this);
+    cancelBtn.setToolTipText
+                ("Cancel the process of changing the name of " + notcherName);
+    panel.add(cancelBtn);
     
     // create a filler to "push" everything in this panel to the center -- only
     // works to "push" to the center if another glue is used
     panel.add(Box.createHorizontalGlue());
     
-    mainPanel.add(panel);
-    
-    centerJDialog(changeNameDialog, mainFrame);
-    
-    changeNameDialog.setVisible(true);
-    
-}// end of NotcherUI::createChangeNameDialog
+    return panel;
+
+}// end of NotcherUI::createChangeNameApplyAndCancelButtons
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -889,15 +936,39 @@ public void createChangeNameDialog()
 
 public void changeNotcherName()
 {
-
+    
+    previousNotcherName = notcherName;
+    
     notcherName = changeNameTextField.getText();
     
     //reset various items that use the notcherName
     changeNameDialog.setTitle("Change the Name of: " + notcherName);
     nameValueLabel.setText(notcherName);
     notcherSettings.setNames(notcherName);
+    
+    String message = "The name of '" + previousNotcherName + "'" +
+                        " has been changed to '" + notcherName + "'.";
+    JOptionPane.showMessageDialog(mainFrame, message);
+    
+    disposeChangeNameDialog();
 
 }// end of NotcherUI::changeNotcherName
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::disposeChangeNameDialog
+//
+// Disposes of the changeNameDialog.
+// Releases all of the native screen resources used by the dialog, its 
+// subcomponents, and all of its owned children.
+//
+
+public void disposeChangeNameDialog()
+{
+    
+    changeNameDialog.dispose();
+
+}// end of NotcherUI::disposeChangeNameDialog
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

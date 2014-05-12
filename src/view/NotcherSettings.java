@@ -22,6 +22,8 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
+import java.util.Enumeration;
+import javax.swing.AbstractButton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -42,9 +44,9 @@ import toolkit.Tools;
 
 public class NotcherSettings extends JDialog {
     
-    private EventHandler eventHandler;
-    private WindowListener windowListener;
-    private ActionListener actionListener;
+    private final EventHandler eventHandler;
+    private final WindowListener windowListener;
+    private final ActionListener actionListener;
     
     private final JFrame parentFrame;
     

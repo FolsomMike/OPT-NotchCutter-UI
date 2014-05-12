@@ -169,6 +169,11 @@ public void actionPerformed(ActionEvent e)
     if ("Apply this name to the unit".equals(e.getActionCommand())){
         notcherUI.changeNotcherName();
     }
+    
+    if ("Cancel the process of changing the name of the unit".equals
+                                                        (e.getActionCommand())){
+        notcherUI.disposeChangeNameDialog();
+    }
 
 }//end of NotcherController::actionPerformed
 //-----------------------------------------------------------------------------
