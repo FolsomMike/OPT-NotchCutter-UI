@@ -24,28 +24,19 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Label;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JFrame;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import toolkit.Tools;
@@ -803,6 +794,39 @@ public void ActivateNotcherSettings()
     notcherSettings.setVisible(true);
 
 }// end of NotcherUI::ActivateNotcherSettings
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::createChangeNameDialog
+//
+// Creates a JDialog for changing the name of this unit.
+// The value given to the JTextFielw is used as the new name.
+//
+
+public void createChangeNameDialog()
+{
+    
+    JDialog changeNameDialog = new JDialog();
+    Tools.setSizes(changeNameDialog, 300, 300);
+    
+    changeNameDialog.setTitle("Change the Name of this Unit");
+    
+    JPanel mainPanel = new JPanel();
+    Tools.setSizes(mainPanel, 300, 300);
+    changeNameDialog.setContentPane(mainPanel);
+    
+    //add text field
+    JTextField changeNameTextField = new JTextField(notcherName);
+    changeNameTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
+    changeNameTextField.selectAll();
+    Tools.setSizes(changeNameTextField, 100, 24);
+    //text fields don't have action commands or action listeners
+    changeNameTextField.setToolTipText("Enter a new name for this unit.");
+    mainPanel.add(changeNameTextField);
+    
+    changeNameDialog.setVisible(true);
+    
+}// end of NotcherUI::createChangeNameDialog
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
