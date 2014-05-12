@@ -57,13 +57,14 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
     
     private JPanel headGuiPanel;
     
+    private JDialog changeNameDialog;
+    
     private JTextField dataVersionTField;
     private JTextField dataTArea1;
     private JTextField dataTArea2;
+    private JTextField changeNameTextField;
     
-    private JLabel statusLabel, infoLabel;
-    private JLabel progressLabel;
-    private JLabel currentCuttingHeadPosition;
+    private JLabel nameValueLabel;
     
     private JButton sendTargetDepthBtn;
     
@@ -300,7 +301,7 @@ public JPanel createNameAndNameValueLabels()
     panel.add(nameLabel);
     
     // create a label to display the name of the notcher
-    JLabel nameValueLabel = new JLabel(notcherName);
+    nameValueLabel = new JLabel(notcherName);
     nameValueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
     // gets the current font of the label
     font = nameValueLabel.getFont();
@@ -812,10 +813,10 @@ public void createChangeNameDialog()
     
     JPanel panel;
     
-    JDialog changeNameDialog = new JDialog(mainFrame);
+    changeNameDialog = new JDialog(mainFrame);
     Tools.setSizes(changeNameDialog, 300, 100);
     
-    changeNameDialog.setTitle("Change the Name of this Unit");
+    changeNameDialog.setTitle("Change the Name of: " + notcherName);
     
     JPanel mainPanel = new JPanel();
     mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
@@ -834,7 +835,7 @@ public void createChangeNameDialog()
     panel.add(Box.createHorizontalGlue());
     
     //add text field
-    JTextField changeNameTextField = new JTextField("Enter new name...");
+    changeNameTextField = new JTextField("Enter new name...");
     changeNameTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
     changeNameTextField.selectAll();
     Tools.setSizes(changeNameTextField, 150, 24);
@@ -876,6 +877,25 @@ public void createChangeNameDialog()
     changeNameDialog.setVisible(true);
     
 }// end of NotcherUI::createChangeNameDialog
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::changeNotcherName
+//
+// Changes the name of the notcher unit to the value of the changeNameTextField.
+//
+
+public void changeNotcherName()
+{
+
+    notcherName = changeNameTextField.getText();
+    
+    //reset various items that use the notcherName
+    changeNameDialog.setTitle("Change the Name of: " + notcherName);
+    nameValueLabel.setText(notcherName);
+    notcherSettings.setTitle(notcherName + " Settings");
+
+}// end of NotcherUI::changeNotcherName
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
