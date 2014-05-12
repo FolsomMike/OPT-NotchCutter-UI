@@ -211,7 +211,7 @@ public JPanel createHeaderPanel()
     outerPanel.add(panel);
     
     //horizontal spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(150, 0)));
+    outerPanel.add(Box.createRigidArea(new Dimension(40, 0)));
     
     // add a containing JPanel
     panel = new JPanel();
@@ -287,6 +287,7 @@ public JPanel createNameAndNameValueLabels()
     // add a containing JPanel to place the labels next to each other
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    Tools.setSizes(panel, 250, 20);
     
     // create a label to display the name of the notcher
     JLabel nameLabel = new JLabel("Name: ");
