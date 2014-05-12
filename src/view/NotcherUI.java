@@ -59,6 +59,7 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
         WindowListener {
     
     private final EventHandler eventHandler;
+    private final NotcherSettings notcherSettings;
     
     private JPanel headGuiPanel;
     
@@ -86,13 +87,15 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
 // NotcherUI::NotcherUI (constructor)
 //
 
-public NotcherUI(int pWidth, int pHeight, int pIndexNumber,
+public NotcherUI(int pWidth, int pHeight, int pIndexNumber, 
+                    NotcherSettings pNotcherSettings, 
                     EventHandler pEventHandler)
 {
     
     width = pWidth;
     height = pHeight;
     indexNumber = pIndexNumber;
+    notcherSettings = pNotcherSettings;
     eventHandler = pEventHandler;
     
 }//end of NotcherUI::NotcherUI (constructor)
@@ -117,6 +120,8 @@ public void init()
     
     //create user interface: buttons, displays, etc.
     setupGui();
+    
+    initiateNotcherSettings();
 
 }//end of NotcherUI::init
 //-----------------------------------------------------------------------------
@@ -770,18 +775,34 @@ public JPanel createApplyButton()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherUI::createSettingsWindow
+// NotcherUI::initiateNotcherSettings
 //
-// Goes through the process of creating a settings window.
+// Initiates the Settings given to this notcherUI and makes the JDialog
+// invisible.
 //
 
-public void createSettingsWindow()
+public void initiateNotcherSettings()
 {
     
-    NotcherSettings notcherSettings = new NotcherSettings(this, eventHandler);
-    notcherSettings.init();
+    notcherSettings.init(notcherName, eventHandler, this, this);
+    notcherSettings.setVisible(false);
 
-}// end of NotcherUI::createSettingsWindow
+}// end of NotcherUI::initiateNotcherSettings
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::ActivateNotcherSettings
+//
+// Activate the Settings given to this notcherUI by making the JDialog
+// visible.
+//
+
+public void ActivateNotcherSettings()
+{
+    
+    notcherSettings.setVisible(true);
+
+}// end of NotcherUI::ActivateNotcherSettings
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

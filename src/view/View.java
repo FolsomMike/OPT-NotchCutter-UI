@@ -215,8 +215,12 @@ public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
 {
 
     NotcherUI tempNotcherUI;
+    NotcherSettings tempNotcherSettings;
     
-    tempNotcherUI = new NotcherUI(350, 325, pIndexNumber, pEventHandler);
+    tempNotcherSettings = new NotcherSettings(mainFrame);
+    
+    tempNotcherUI = new NotcherUI(350, 325, pIndexNumber, tempNotcherSettings, 
+                                    pEventHandler);
     
     tempNotcherUI.init();
     

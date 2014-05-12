@@ -156,6 +156,11 @@ public void actionPerformed(ActionEvent e)
     if ("Save Data To File".equals(e.getActionCommand())){
         saveDataToFile();
     }
+    
+    if ("Change the tools and settings for this device".equals
+                                                        (e.getActionCommand())){
+        notcherUI.ActivateNotcherSettings();
+    }
 
 }//end of NotcherController::actionPerformed
 //-----------------------------------------------------------------------------
