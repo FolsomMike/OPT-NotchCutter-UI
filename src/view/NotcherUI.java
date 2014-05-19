@@ -901,6 +901,7 @@ public JPanel createChangeNameApplyAndCancelButtons()
     Tools.setSizes(applyNewNameBtn, 65, 20);
     applyNewNameBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
     applyNewNameBtn.setActionCommand("Apply this name to the unit");
+    //hsswipp// use keyEvent so that you don't need to press 'alt'
     applyNewNameBtn.setMnemonic(KeyEvent.VK_ENTER);
     applyNewNameBtn.addActionListener(this);
     applyNewNameBtn.setToolTipText("Apply this name to " + notcherName);
