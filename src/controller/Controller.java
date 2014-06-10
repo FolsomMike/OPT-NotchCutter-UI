@@ -43,9 +43,10 @@ import java.text.DecimalFormat;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import model.ADataClass;
+import model.FileHandler;
 import model.Options;
-import view.View;
 import view.MFloatSpinner;
+import view.View;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -116,6 +117,10 @@ public void init()
 
     view = new View(this, aDataClass);
     view.init();
+    
+    //debughss//
+    FileHandler test = new FileHandler();
+    test.init();
 
     //create and load the program options
     options = new Options();
