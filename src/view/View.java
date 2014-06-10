@@ -35,8 +35,10 @@ import java.awt.event.WindowListener;
 import java.awt.font.TextAttribute;
 import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -56,15 +58,17 @@ public class View implements ActionListener, WindowListener
 
     private JFrame mainFrame;
     private JPanel mainPanel;
-
-    private ADataClass aDataClass;
-
-    private MainMenu mainMenu;
-
+    private JPanel topNotcherPanel;
+    private JPanel bottomNotcherPanel;
+    
     private JTextField dataVersionTField;
     private JTextField dataTArea1;
     private JTextField dataTArea2;
 
+    private ADataClass aDataClass;
+
+    private MainMenu mainMenu;
+    
     private GuiUpdater guiUpdater;
     private Log log;
     private ThreadSafeLogger tsLog;
@@ -77,10 +81,7 @@ public class View implements ActionListener, WindowListener
 
     private Font blackSmallFont, redSmallFont;
     private Font redLargeFont, greenLargeFont, yellowLargeFont, blackLargeFont;
-
-    private JLabel statusLabel, infoLabel;
-    private JLabel progressLabel;
-
+    
 //-----------------------------------------------------------------------------
 // View::View (constructor)
 //
@@ -128,6 +129,10 @@ public void init()
 
     //arrange all the GUI items
     mainFrame.pack();
+    
+    centerJFrame(mainFrame);
+    
+    mainFrame.setResizable(false);
 
     //display the main frame
     mainFrame.setVisible(true);
@@ -151,7 +156,7 @@ public void setupMainFrame()
     mainFrame.setContentPane(mainPanel);
 
     //set the min/max/preferred sizes of the panel to set the size of the frame
-    Tools.setSizes(mainPanel, 200, 300);
+    //Tools.setSizes(mainPanel, 600, 600); // debug hss
 
     mainFrame.addWindowListener(this);
 
@@ -170,9 +175,6 @@ public void setupMainFrame()
 
     mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    //    setLocation((int)screenSize.getWidth() - getWidth(), 0);
-
 }// end of View::setupMainFrame
 //-----------------------------------------------------------------------------
 
@@ -186,80 +188,60 @@ private void setupGui()
 {
 
     mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //create a label to display good/warning/bad system status
-    statusLabel = new JLabel("Status");
-    statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(statusLabel);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //create a label to display miscellaneous info
-    infoLabel = new JLabel("Info");
-    infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(infoLabel);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //add text field
-    dataVersionTField = new JTextField("unknown");
-    dataVersionTField.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataVersionTField, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataVersionTField.setToolTipText("The data format version.");
-    mainPanel.add(dataVersionTField);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,3))); //vertical spacer
-
-    //add text field
-    dataTArea1 = new JTextField("");
-    dataTArea1.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataTArea1, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataTArea1.setToolTipText("A data entry.");
-    mainPanel.add(dataTArea1);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,3))); //vertical spacer
-
-    //add text field
-    dataTArea2 = new JTextField("");
-    dataTArea2.setAlignmentX(Component.LEFT_ALIGNMENT);
-    Tools.setSizes(dataTArea2, 100, 24);
-    //text fields don't have action commands or action listeners
-    dataTArea2.setToolTipText("A data entry.");
-    mainPanel.add(dataTArea2);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,20))); //vertical spacer
-
-    //add button
-    JButton loadBtn = new JButton("Load");
-    loadBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    loadBtn.setActionCommand("Load Data From File");
-    loadBtn.addActionListener(this);
-    loadBtn.setToolTipText("Load data from file.");
-    mainPanel.add(loadBtn);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
-
-    //add a button
-    JButton saveBtn = new JButton("Save");
-    saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    saveBtn.setActionCommand("Save Data To File");
-    saveBtn.addActionListener(this);
-    saveBtn.setToolTipText("Save data to file.");
-    mainPanel.add(saveBtn);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
-
-    progressLabel = new JLabel("Progress");
-    progressLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    mainPanel.add(progressLabel);
-
-    mainPanel.add(Box.createRigidArea(new Dimension(0,10))); //vertical spacer
-
+    
+    topNotcherPanel = new JPanel();
+    topNotcherPanel.setLayout(new BoxLayout(topNotcherPanel,
+                                                BoxLayout.X_AXIS));
+    topNotcherPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    mainPanel.add(topNotcherPanel);
+    
+    bottomNotcherPanel = new JPanel();
+    bottomNotcherPanel.setLayout(new BoxLayout(bottomNotcherPanel, 
+                                                BoxLayout.X_AXIS));
+    bottomNotcherPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    mainPanel.add(bottomNotcherPanel);
+    
 }// end of View::setupGui
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::createNotcherUI
+//
+// Creates a new NotcherUI and passes pEventHandler in as the EventHandler.
+//
+
+public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
+{
+
+    NotcherUI tempNotcherUI;
+    
+    tempNotcherUI = new NotcherUI(350, 325, pIndexNumber, mainFrame, 
+                                                                pEventHandler);
+    
+    tempNotcherUI.init();
+    
+    tempNotcherUI.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    if (pIndexNumber <= 1) {
+        
+        topNotcherPanel.add(tempNotcherUI);
+        
+    }
+    
+    else if (pIndexNumber > 1) {
+        
+        bottomNotcherPanel.add(tempNotcherUI);
+        
+    }
+    
+    mainFrame.pack();
+    
+    centerJFrame(mainFrame);
+    
+    return tempNotcherUI;
+
+}//end of View::createNotcherUI
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -374,24 +356,6 @@ public void updateGUIDataSet1()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// View::drawRectangle
-//
-// Draws a rectangle on mainPanel
-//
-
-public void drawRectangle()
-{
-
-    
-    Graphics2D g2 = (Graphics2D)mainPanel.getGraphics();
-
-     // draw Rectangle2D.Double
-    g2.draw(new Rectangle2D.Double(20, 10,10, 10));
-        
-}//end of View::drawRectangle
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // View::updateModelDataSet1
 //
 // Updates some of the model data with values in the GUI.
@@ -419,11 +383,56 @@ public void setupAndStartMainTimer()
 {
 
     //main timer has 2 second period
-    mainTimer = new javax.swing.Timer (2000, this);
+    mainTimer = new javax.swing.Timer (100, this);
     mainTimer.setActionCommand ("Timer");
     mainTimer.start();
 
 }// end of Controller::setupAndStartMainTimer
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::createImageIcon
+//
+// Returns an ImageIcon, or null if the path was invalid.
+//
+// ***************************************************************************
+// NOTE: You must use forward slashes in the path names for the resource
+// loader to find the image files in the JAR package.
+// ***************************************************************************
+//
+
+protected static ImageIcon createImageIcon(String pPath)
+{
+
+    // have to use the View class because it is located in the same package as
+    // the file; specifying the class specifies the first portion of the path
+    // to the image, this concatenated with the pPath
+    java.net.URL imgURL = View.class.getResource(pPath);
+
+    if (imgURL != null) {
+        return new ImageIcon(imgURL);
+    }
+    else {return null;}
+
+}//end of View::createImageIcon
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::centerJFrame
+//
+// Centers a passed in Jframe according to the screen size and JFrame's size.
+//
+
+public void centerJFrame(JFrame pFrame)
+{
+    
+    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    pFrame.setLocation((int)screenSize.getWidth()/2 - 
+                            (int)pFrame.getWidth()/2, 
+                            (int)screenSize.getHeight()/2 - 
+                            (int)pFrame.getHeight()/2);
+
+}// end of View::centerJFrame
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -454,7 +463,7 @@ public void windowClosing(WindowEvent e)
 
     eventHandler.windowClosing(e);
 
-}//end of Controller::windowClosing
+}//end of View::windowClosing
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
