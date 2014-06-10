@@ -18,12 +18,14 @@
 
 //-----------------------------------------------------------------------------
 
-package model;
+package chart.mksystems.inifile;
 
 import java.awt.Color;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 //-----------------------------------------------------------------------------
 // class Parameters
@@ -120,32 +122,60 @@ static public MColor fromString(String pString, Color pDefault)
     pString = pString.toUpperCase();
 
     //if the color name matches a standard color, use that color
-
-    if (pString.equals("BLACK")) {match = Color.BLACK; exit = true;}
-    else
-    if (pString.equals("BLUE")) {match = Color.BLUE; exit = true;}
-    else
-    if (pString.equals("CYAN")) {match = Color.CYAN; exit = true;}
-    else
-    if (pString.equals("DARK_GRAY")){match = Color.DARK_GRAY;exit = true;}
-    else
-    if (pString.equals("GRAY")) {match = Color.GRAY; exit = true;}
-    else
-    if (pString.equals("GREEN")) {match = Color.GREEN; exit = true;}
-    else
-    if (pString.equals("LIGHT GRAY")){match = Color.LIGHT_GRAY;exit=true;}
-    else
-    if (pString.equals("MAGENTA")) {match = Color.MAGENTA; exit = true;}
-    else
-    if (pString.equals("ORANGE")) {match = Color.ORANGE; exit = true;}
-    else
-    if (pString.equals("PINK")) {match = Color.PINK; exit = true;}
-    else
-    if (pString.equals("RED")) {match = Color.RED; exit = true;}
-    else
-    if (pString.equals("WHITE")) {match = Color.WHITE; exit = true;}
-    else
-    if (pString.equals("YELLOW")) {match = Color.YELLOW; exit = true;}
+    switch (pString) {
+        case "BLACK":
+            match = Color.BLACK;
+            exit = true;
+            break;
+        case "BLUE":
+            match = Color.BLUE;
+            exit = true;
+            break;
+        case "CYAN":
+            match = Color.CYAN;
+            exit = true;
+            break;
+        case "DARK_GRAY":
+            match = Color.DARK_GRAY;
+            exit = true;
+            break;
+        case "GRAY":
+            match = Color.GRAY;
+            exit = true;
+            break;
+        case "GREEN":
+            match = Color.GREEN;
+            exit = true;
+            break;
+        case "LIGHT GRAY":
+            match = Color.LIGHT_GRAY;
+            exit=true;
+            break;
+        case "MAGENTA":
+            match = Color.MAGENTA;
+            exit = true;
+            break;
+        case "ORANGE":
+            match = Color.ORANGE;
+            exit = true;
+            break;
+        case "PINK":
+            match = Color.PINK;
+            exit = true;
+            break;
+        case "RED":
+            match = Color.RED;
+            exit = true;
+            break;
+        case "WHITE":
+            match = Color.WHITE;
+            exit = true;
+            break;
+        case "YELLOW":
+            match = Color.YELLOW;
+            exit = true;
+            break;
+    }
 
     //if color found, exit with that color
     if (exit) {return(new MColor(match));}
@@ -283,15 +313,27 @@ public class IniFile extends Object{
 // IniFile::IniFile (constructor)
 //
 
-public IniFile(String pFilename, String pFileFormat) throws IOException
+public IniFile(String pFilename, String pFileFormat)
 {
 
     fileFormat = pFileFormat;
+    filename = pFilename;
+
+}//end of IniFile::IniFile (constructor)
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// IniFile::init
+//
+// Initializes the object.  MUST be called by sub classes after instantiation.
+//
+
+public void init() throws IOException
+{
 
     //create a vector to hold the lines of text read from the file
-    buffer = new ArrayList<String>(1000);
+    buffer = new ArrayList<>(1000);
 
-    filename = pFilename;
     modified = false; //no data has yet been modified or added
 
     //create various decimal formats
@@ -342,14 +384,17 @@ public IniFile(String pFilename, String pFileFormat) throws IOException
         buffer.add("");
 
     }
-    catch(IOException e){throw new IOException();}
+    catch(IOException e){
+        logSevere(e.getMessage() + " - Error: 346");
+        throw new IOException();
+    }
     finally{
         if (in != null) {in.close();}
         if (inputStreamReader != null) {inputStreamReader.close();}
         if (fileInputStream != null) {fileInputStream.close();}
     }
 
-}//end of IniFile::IniFile (constructor)
+}//end of IniFile::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -371,7 +416,7 @@ public void save()
 
         fileOutputStream = new FileOutputStream(filename);
         outputStreamWriter =
-                          new OutputStreamWriter(fileOutputStream, fileFormat);
+                        new OutputStreamWriter(fileOutputStream, fileFormat);
         out = new BufferedWriter(outputStreamWriter);
 
         ListIterator i;
@@ -381,16 +426,17 @@ public void save()
         for (i = buffer.listIterator(); i.hasNext(); ){
             out.write((String)i.next());
             out.newLine();
-        }
+            }
 
         //Note! You MUST flush to make sure everything is written.
 
         out.flush();
 
     }
-    catch(IOException e){}
+    catch(IOException e){
+        logSevere(e.getMessage() + " - Error: 394");
+    }
     finally{
-
         try{if (out != null) {out.close();}}
         catch(IOException e){}
         try{if (outputStreamWriter != null) {outputStreamWriter.close();}}
@@ -436,10 +482,10 @@ String getValue(String pSection, String pKey, Parameters pParams)
     //search the buffer for the section name
 
     //NOTE: searching each line using startsWith and not worrying about case
-    // sped the search for section up tremendously.  This does mean that the
-    // section name is case-sensitive and there can be no whitespace at the
-    // beginning of a section name.  A 4000 line file was taking more than 10
-    // seconds to process and now takes a second or less.
+    // sped the search for section up tremendously.  This does mean that the section
+    // name is case-sensitive and there can be no whitespace at the beginning of
+    // a section name.  A 4000 line file was taking more than 10 seconds to process
+    // and now takes a second or less.
 
     for (i = buffer.listIterator(); i.hasNext(); ) {
 
@@ -449,7 +495,7 @@ String getValue(String pSection, String pKey, Parameters pParams)
             //set the index of the line containing the section name
             pParams.sectionIndex = i.previousIndex();
 
-            break;
+        break;
         }
     }
 
@@ -457,9 +503,9 @@ String getValue(String pSection, String pKey, Parameters pParams)
     //pParams.keyIndex and pParams.sectionIndex will be -1
     if (pParams.sectionIndex == -1) {return("");}
 
-    //search the section for the key - if another section is found before
-    //finding the key, then return empty string and the index of the section
-    //entry add '=' to the search phrase to make sure a partial match will fail
+    //search the section for the key - if another section is found before finding
+    //the key, then return empty string and the index of the section entry
+    //add '=' to the search phrase to make sure a partial match will fail
 
     String key = pKey.toLowerCase() + "=";
     StringBuilder line = new StringBuilder(200);
@@ -483,8 +529,8 @@ String getValue(String pSection, String pKey, Parameters pParams)
         }
         catch(IndexOutOfBoundsException e){} //ignore this error
 
-        //stop when line found containing the key name - index of key must be
-        //0 to insure that a partial match is not made
+        //stop when line found containing the key name - index of key must be 0 to
+        //insure that a partial match is not made
         if ((matchIndex = line.indexOf(key)) == 0) {break;}
 
     }
@@ -501,13 +547,12 @@ String getValue(String pSection, String pKey, Parameters pParams)
     //look for '=' symbol, if not found then return empty string
     if ( (indexOfEqual = line.indexOf("=")) == -1) {return("");}
 
-    //return part of the line after the '=' sign - on error return empty string
+    //return the part of the line after the '=' sign - on error return empty string
     try{
         //set return parameters to reflect the line found to contain the key
         pParams.keyIndex = i.previousIndex();
 
-        return(
-            ((String)buffer.get(pParams.keyIndex)).substring(indexOfEqual + 1));
+        return(((String)buffer.get(pParams.keyIndex)).substring(indexOfEqual + 1));
 
     }
     catch(StringIndexOutOfBoundsException e){
@@ -541,8 +586,8 @@ public int readInt(String pSection, String pKey, int pDefault)
 
     int value;
 
-    //try to convert the remainder of the string after the '=' symbol to an integer
-    //if an error occurs, return the default value
+    //try to convert the remainder of the string after the '=' symbol to an
+    //integer if an error occurs, return the default value
 
     try{
         value = Integer.parseInt(valueText);
@@ -577,8 +622,8 @@ public double readDouble(String pSection, String pKey, double pDefault)
 
     double value;
 
-    //try to convert the remainder of the string after the '=' symbol to a
-    //double if an error occurs, return the default value
+    //try to convert the remainder of the string after the '=' symbol to a double
+    //if an error occurs, return the default value
 
     try{
         value = Double.parseDouble(valueText);
@@ -636,10 +681,10 @@ public String readString(String pSection, String pKey, String pDefault)
 
     //if Section/Key not found, return the default
     if (valueText.equals("")) {
-            return(pDefault);
+        return(pDefault);
     }
     else {
-            return(valueText);
+        return(valueText);
     }
 
 }//end of IniFile::readString
@@ -699,8 +744,8 @@ private void writeValue(String pSection, String pKey, String pNewEntry)
 
     Parameters params = new Parameters();
 
-    //use the getValue function to search for the section and key and retrieve the
-    //index positions in the buffer of the section and key via params
+    //use the getValue function to search for the section and key and retrieve
+    //the index positions in the buffer of the section and key via params
     getValue(pSection, pKey, params);
 
     if (params.keyIndex != -1){
@@ -709,7 +754,8 @@ private void writeValue(String pSection, String pKey, String pNewEntry)
         buffer.set(params.keyIndex, pNewEntry);
 
     }
-    else if (params.sectionIndex != -1){
+    else
+    if (params.sectionIndex != -1){
 
         //if section found but not key, add new key=value line to end of section
         buffer.add(params.sectionIndex, pNewEntry);
@@ -814,7 +860,7 @@ DecimalFormat getDecimalFormat(int pPrecision)
     //if illegal value, use precision of 2
     if ((pPrecision < 0) || (pPrecision >= DecimalFormats.length)){
         pPrecision = 2;
-    }
+        }
 
     return DecimalFormats[pPrecision];
 
@@ -910,10 +956,10 @@ public void writeString(String pSection, String pKey, String pValue)
 //
 // Returns true if file was created in UTF-16LE format, false if otherwise.
 //
-// Returns false if the file is not found or on I/O error.
+// Throws IOException if the file is not found or on I/O error.
 //
 
-static public boolean detectUTF16LEFormat(String pFilename)
+static public boolean detectUTF16LEFormat(String pFilename) throws IOException
 {
 
     FileInputStream fileInputStream = null;
@@ -950,9 +996,8 @@ static public boolean detectUTF16LEFormat(String pFilename)
     catch (FileNotFoundException e){
         return(false);
     }//catch
-    //catch(IOException e){throw new IOException();}
     catch(IOException e){
-        return(false);
+        throw new IOException(e.getMessage() + " - Error: 956");
     }//catch
     finally{
         try{if (in != null) {in.close();}}
@@ -966,8 +1011,37 @@ static public boolean detectUTF16LEFormat(String pFilename)
 }//end of IniFile::detectUTF16LEFormat
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// IniFile::logSevere
+//
+// Logs pMessage with level SEVERE using the Java logger.
+//
 
-//debug System.out.println(String.valueOf(value)); //debug mks
+void logSevere(String pMessage)
+{
+
+    Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage);
+
+}//end of IniFile::logSevere
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// IniFile::logStackTrace
+//
+// Logs stack trace info for exception pE with pMessage at level SEVERE using
+// the Java logger.
+//
+
+void logStackTrace(String pMessage, Exception pE)
+{
+
+    Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage, pE);
+
+}//end of IniFile::logStackTrace
+//-----------------------------------------------------------------------------
+
+
+//debug code System.out.println(String.valueOf(value));
 
 }//end of class IniFile
 //-----------------------------------------------------------------------------
