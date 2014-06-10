@@ -1,29 +1,13 @@
 /******************************************************************************
-* Title: Controller.java
-* Author: Mike Schoonover
-* Date: 11/15/12
+* Title: NotcherController.java
+* Author: Hunter Schoonover
+* Date: 2/17/14
 *
 * Purpose:
 *
-* This class is the Controller in a Model-View-Controller architecture.
-* It creates the Model and the View.
-* It tells the View to update its display of the data in the model.
-* It handles user input from the View (button pushes, etc.)*
-* It tells the Model what to do with its data based on these inputs and tells
-*   the View when to update or change the way it is displaying the data.
-*
-* In this implementation:
-*   the Model knows only about itself
-*   the View knows only about the Model and can get data from it
-*   the Controller knows about the Model and the View and interacts with both
-*
-* In this specific MVC implementation, the Model does not send messages to
-* the View -- it expects the Controller to trigger the View to request data
-* from the Model when necessary.
-*
-* The View sends messages to the Controller in the form of action messages
-* to an EventHandler object -- in this case the Controller is designated to the
-* View as the EventHandler.
+* This class is the Notcher Controller. It creates and handles a notcher UI; 
+* user input from the UI is handled by this class.
+* 
 *
 * Open Source Policy:
 *
@@ -44,15 +28,16 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import model.ADataClass;
 import model.Options;
-import view.View;
 import view.MFloatSpinner;
+import view.NotcherUI;
+import view.View;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// class Controller
+// class NotcherController
 //
 
-public class Controller implements EventHandler, Runnable
+public class NotcherController implements EventHandler, Runnable
 {
 
     private ADataClass aDataClass;
@@ -61,7 +46,7 @@ public class Controller implements EventHandler, Runnable
 
     private Options options;
     
-    private NotcherController[] notchControllerArray;
+    private NotcherUI notcherUI;
 
     private Boolean blinkStatusLabel = false;
 
@@ -75,35 +60,35 @@ public class Controller implements EventHandler, Runnable
     private String tSafeText;
 
     private int displayUpdateTimer = 0;
+    private int indexNumber;
     
     // hss wip -- should remove
     private double voltSimLevel = 5;
     private double currentSimLevel = 0;
 
     private String XMLPageFromRemote;
+    
+    private final String newline = "\n";
 
     private boolean shutDown = false;
 
     private final JFileChooser fileChooser = new JFileChooser();
 
-    private final String newline = "\n";
-    
-    // hss wip -- should be removed after notchers
-    // are detected on the network
-    private static final int NCNUMBER = 4;
-
 //-----------------------------------------------------------------------------
-// Controller::Controller (constructor)
+// NotcherController::NotcherController (constructor)
 //
 
-public Controller()
+public NotcherController(View pView, int pIndexNmber)
 {
 
-}//end of Controller::Controller (constructor)
+    view = pView;
+    indexNumber = pIndexNmber;
+    
+}//end of NotcherController::NotcherController (constructor)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::init
+// NotcherController::init
 //
 // Initializes the object.  Must be called immediately after instantiation.
 //
@@ -114,73 +99,40 @@ public void init()
     aDataClass = new ADataClass();
     aDataClass.init();
 
-    view = new View(this, aDataClass);
-    view.init();
-
     //create and load the program options
     options = new Options();
 
     //start the control thread
-    new Thread(this).start();
-
-    view.setupAndStartMainTimer();
+    // new Thread(this).start(); //hss wip
     
-    determineNumberOfNotchersOnNetwork();
-    
-    createNotcherControllers();
+    notcherUI = createNotcherUI();
 
-}// end of Controller::init
+}// end of NotcherController::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::determineNumberOfNotchersOnNetwork
+// NotcherController::createNotcherUI
 //
-// Sends a UDP packet to all remotes on the network. The notchers will return
-// their IP addresses which are then stored in a list. The list is then used
-// to make connection with each one separately.
-// 
-// hss wip -- does not yet detect notchers on network; the number of notchers is
-// preset
+// Creates a notcher UI and passes this as an event handler.
 //
 
-public void determineNumberOfNotchersOnNetwork()
+public NotcherUI createNotcherUI()
 {
-
-    notchControllerArray = new NotcherController[NCNUMBER];
-
-}// end of Controller::determineNumberOfNotchersOnNetwork
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Controller::createNotcherControllers
-//
-// Goes through the process of creating a notcherController object for each
-// index in the notcher array.
-//
-
-public void createNotcherControllers()
-{
-
-    for (int i = 0; i < notchControllerArray.length; i++) {
-        
-        notchControllerArray[i] = new NotcherController(view, i);
-        
-        notchControllerArray[i].init();
     
-    }
+    return (view.createNotcherUI(this, indexNumber));
 
-}// end of Controller::createNotcherControllers
+}// end of NotcherController::createNotcherUI
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::actionPerformed
+// NotcherController::actionPerformed
 //
 // Responds to events.
 //
 // This is identical to the method employed by  ActionListener objects. This
 // object is not an ActionListener, but uses the same concept for clarity. The
-// "View" (MVC Concept) objects catch GUI events and call this method to pass
-// those events to this "Controller" object.
+// "NotcherUI" objects catch GUI events and call this method to pass
+// those events to this "NotcherController" object.
 //
 
 @Override
@@ -188,10 +140,6 @@ public void actionPerformed(ActionEvent e)
 {
 
     if ("Timer".equals(e.getActionCommand())) {doTimerActions();}
-
-    if ("Display Log".equals(e.getActionCommand())) {displayLog();}
-
-    if ("Display Help".equals(e.getActionCommand())) {displayHelp();}
 
     if ("Display About".equals(e.getActionCommand())) {displayAbout();}
 
@@ -208,26 +156,102 @@ public void actionPerformed(ActionEvent e)
     if ("Save Data To File".equals(e.getActionCommand())){
         saveDataToFile();
     }
+    
+    if ("Change the tools and settings for this device".equals
+                                                        (e.getActionCommand())){
+        notcherUI.ActivateNotcherSettings();
+    }
+    
+    if ("Change name of unit".equals(e.getActionCommand())){
+        notcherUI.createChangeNameDialog();
+    }
+    
+    if ("Apply this name to the unit".equals(e.getActionCommand())){
+        notcherUI.changeNotcherName();
+    }
+    
+    if ("Cancel the process of changing the name of the unit".equals
+                                                        (e.getActionCommand())){
+        notcherUI.disposeChangeNameDialog();
+    }
 
-}//end of Controller::actionPerformed
+}//end of NotcherController::actionPerformed
 //-----------------------------------------------------------------------------
 
-/*
 //-----------------------------------------------------------------------------
-// Controller::paintComponent
+// Controller::stateChanged
 //
-
+    
 @Override
-public void paintComponent (Graphics g)
+public void stateChanged(ChangeEvent ce)
+
 {
+    
+    //if for some reason the object which changed state is not a subclass of
+    //of Component, do nothing as this code only handles Components
+    
+    if (!(ce.getSource() instanceof Component)) {
+        return;
+    }    
+    
+    //cast the object to a Component so it's methods can be accessed
+    Component c = (Component)(ce.getSource());
+    
+    String name = c.getName();
+        
+    if (name.startsWith("Cut Depth Input Spinner")){
+    
+        //Since we know that the Component with the name starting with
+        //"Depth Input Spinner" is an MFloatSpinner (because we created it and
+        // used that name for it), it can safely be cast to an MFloatSpinner.
+        //Since the values in that spinner are meant to be doubles, the
+        //getDoubleValue method is used to retrieve the value.
+        
+        double value = ((MFloatSpinner)c).getDoubleValue();
+    
+        notcherUI.setTextForDataTArea1("" + value);
 
-}// end of Controller::paintComponent
+        //using getDoubleValue as above will often return a value with a long
+        //fractional portion due to binary floating point conversion
+        //imprecision -- using getText returns the value as a string formatted
+        //exactly as that shown in the spinner's text box and will be rounded
+        //off and truncated in the same manner
+        
+        String textValue = ((MFloatSpinner)c).getText();
+        
+        notcherUI.setTextForDataTArea2(textValue);
+        
+    }
+    
+    else if (name.startsWith("Cutting Head Position Spinner")){
+    
+        //Since we know that the Component with the name starting with
+        //"Depth Input Spinner" is an MFloatSpinner (because we created it and
+        // used that name for it), it can safely be cast to an MFloatSpinner.
+        //Since the values in that spinner are meant to be doubles, the
+        //getDoubleValue method is used to retrieve the value.
+        
+        double value = ((MFloatSpinner)c).getDoubleValue();
+    
+        notcherUI.setTextForDataTArea1("" + value);
+
+        //using getDoubleValue as above will often return a value with a long
+        //fractional portion due to binary floating point conversion
+        //imprecision -- using getText returns the value as a string formatted
+        //exactly as that shown in the spinner's text box and will be rounded
+        //off and truncated in the same manner
+        
+        String textValue = ((MFloatSpinner)c).getText();
+        
+        notcherUI.setTextForDataTArea2(textValue);
+        
+    }
+        
+}//end of Controller::stateChanged
 //-----------------------------------------------------------------------------
 
-*/
-
 //-----------------------------------------------------------------------------
-// Controller::loadDataFromFile
+// NotcherController::loadDataFromFile
 //
 // Loads data from a file.
 //
@@ -237,13 +261,13 @@ public void loadDataFromFile()
 
     aDataClass.loadFromTextFile();
 
-    view.updateGUIDataSet1();
+    //notcherUI.updateGUIDataSet1();//hss wip
     
-}//end of Controller::loadDataFromFile
+}//end of NotcherController::loadDataFromFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::saveDataToFile
+// NotcherController::saveDataToFile
 //
 // Saves data to a file.
 //
@@ -251,15 +275,15 @@ public void loadDataFromFile()
 public void saveDataToFile()
 {
 
-    view.updateModelDataSet1();
+    //notcherUI.updateModelDataSet1();//hss wip
 
     aDataClass.saveToTextFile();
 
-}//end of Controller::saveDataToFile
+}//end of NotcherController::saveDataToFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::doTimerActions
+// NotcherController::doTimerActions
 //
 // Performs actions driven by the timer.
 //
@@ -268,48 +292,71 @@ public void saveDataToFile()
 
 public void doTimerActions()
 {
+
+    // hss wip -- simulation purposes should remove
+    simulateVoltageAndCurrentLevels();
     
-    // calls all of the doTimerActions for each of the notcherContollers
-    for (int i = 0; i < notchControllerArray.length; i++) {
-        
-        notchControllerArray[i].doTimerActions();
+}//end of NotcherController::doTimerActions
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherController::simulateVoltageAndCurrentLevels
+//
+// Simulates values for the voltage and current levels.
+// 
+// hss wip -- simulation purposes; should remove
+//
+
+public void simulateVoltageAndCurrentLevels()
+{
+
+    // hss wip
+    // for simulation purposes -- should remove
     
+    double deltaSim;
+    
+    // simulate value for voltage leds
+    
+    deltaSim = (5 * Math.random()) - 2.5;
+    
+    voltSimLevel += deltaSim;
+    
+    if (voltSimLevel < 0) {
+        voltSimLevel = 0;
     }
     
-}//end of Controller::doTimerActions
+    if (voltSimLevel > 10) {
+        voltSimLevel = 10;
+    }
+    
+    notcherUI.voltageLeds.setValue(voltSimLevel);
+    
+    notcherUI.voltageLeds.repaint();
+    
+    
+    // simulate value for current leds
+    
+    deltaSim = (5 * Math.random()) - 2.5;
+    
+    currentSimLevel += deltaSim;
+    
+    if (currentSimLevel < 0) {
+        currentSimLevel = 0;
+    }
+    
+    if (currentSimLevel > 10) {
+        currentSimLevel = 10;
+    }
+    
+    notcherUI.currentLeds.setValue(currentSimLevel);
+    
+    notcherUI.currentLeds.repaint();
+
+}// end of NotcherController::simulateVoltageAndCurrentLevels
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::displayLog
-//
-// Displays the log window. It is not released after closing as the information
-// is retained so it can be viewed the next time the window is opened.
-//
-
-private void displayLog()
-{
-
-    view.displayLog();
-
-}//end of Controller::displayLog
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Controller::displayHelp
-//
-// Displays help information.
-//
-
-private void displayHelp()
-{
-
-    view.displayHelp();
-
-}//end of Controller::displayHelp
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Controller::displayAbout
+// NotcherController::displayAbout
 //
 // Displays about information.
 //
@@ -319,22 +366,22 @@ private void displayAbout()
 
     view.displayAbout();
 
-}//end of Controller::displayAbout
+}//end of NotcherController::displayAbout
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::doSomething1
+// NotcherController::doSomething1
 //
 
 private void doSomething1()
 {
 
 
-}//end of Controller::doSomething1
+}//end of NotcherController::doSomething1
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::doSomethingInWorkerThread
+// NotcherController::doSomethingInWorkerThread
 //
 // Does nothing right now -- modify it to call a function which takes a long
 // time to finish. It will be run in a background thread so the GUI is still
@@ -402,22 +449,22 @@ private void doSomethingInWorkerThread()
     };//end of class SwingWorker
     //----------------------------------------------------------------------
 
-}//end of Controller::doSomethingInWorkerThread
+}//end of NotcherController::doSomethingInWorkerThread
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::doSomething2
+// NotcherController::doSomething2
 //
 
 private void doSomething2()
 {
 
 
-}//end of Controller::doSomething2
+}//end of NotcherController::doSomething2
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::run
+// NotcherController::run
 //
 // This is the part which runs as a separate thread.  The actions of accessing
 // remote devices occur here.  If they are done in a timer call instead, then
@@ -442,11 +489,11 @@ public void run()
 
     }
 
-}//end of Controller::run
+}//end of NotcherController::run
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::threadSleep
+// NotcherController::threadSleep
 //
 // Calls the Thread.sleep function. Placed in a function to avoid the
 // "Thread.sleep called in a loop" warning -- yeah, it's cheezy.
@@ -457,11 +504,11 @@ public void threadSleep(int pSleepTime)
 
     try {Thread.sleep(pSleepTime);} catch (InterruptedException e) { }
 
-}//end of Controller::threadSleep
+}//end of NotcherController::threadSleep
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::control
+// NotcherController::control
 //
 // Performs all display and control.  Call this from a thread.
 //
@@ -475,19 +522,11 @@ public void control()
         //call function to update stuff here
     }
 
-
-    //If a shut down is initiated, clean up and exit the program.
-
-    if(shutDown){
-        //exit the program
-        System.exit(0);
-    }
-
-}//end of Controller::control
+}//end of NotcherController::control
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::displayErrorMessage
+// NotcherController::displayErrorMessage
 //
 // Displays an error dialog with message pMessage.
 //
@@ -497,11 +536,11 @@ public void displayErrorMessage(String pMessage)
 
     view.displayErrorMessage(pMessage);
 
-}//end of Controller::displayErrorMessage
+}//end of NotcherController::displayErrorMessage
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::shutDown
+// NotcherController::shutDown
 //
 // Disables chassis power and performs any other appropriate shut down
 // operations.
@@ -515,36 +554,21 @@ public void shutDown()
 
     shutDown = true;
 
-}//end of Controller::shutDown
+}//end of NotcherController::shutDown
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::windowClosing
+// NotcherController::(various window listener functions)
 //
-// Handles actions necessary when the window is closing
+// These functions are implemented per requirements of interface Event Handler,
+// which includes WindowListener functions, but do nothing at the present time.  
+// As code is added to each function, it should be moved from this section and 
+// formatted properly.
 //
-
-@Override
-public void windowClosing(WindowEvent e)
-{
-
-    //perform all shut down procedures
-
-    shutDown();
-
-}//end of Controller::windowClosing
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Controller::(various window & listener functions)
+// Although NotcherController has no windows to control, the WindowListener
+// functions are still required because they are a part of the EventHandler
+// interface.
 //
-// These functions are implemented per requirements of interfaces WindowListener
-// & ChnageListener but do nothing at the present time.  As code is added to 
-// each function, it should be moved from this section and formatted properly.
-//
-
-@Override
-public void stateChanged(ChangeEvent ce){}
 
 @Override
 public void windowActivated(WindowEvent e){}
@@ -552,8 +576,8 @@ public void windowActivated(WindowEvent e){}
 public void windowDeactivated(WindowEvent e){}
 @Override
 public void windowOpened(WindowEvent e){}
-//@Override
-//public void windowClosing(WindowEvent e){}
+@Override
+public void windowClosing(WindowEvent e){}
 @Override
 public void windowClosed(WindowEvent e){}
 @Override
@@ -561,10 +585,9 @@ public void windowIconified(WindowEvent e){}
 @Override
 public void windowDeiconified(WindowEvent e){}
 
-//end of Controller::(various window & change listener functions)
+//end of NotcherController::(various window listener functions)
 //-----------------------------------------------------------------------------
 
-
-}//end of class Controller
+}//end of class NotcherController
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
