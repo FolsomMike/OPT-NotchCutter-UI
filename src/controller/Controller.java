@@ -1,6 +1,6 @@
 /******************************************************************************
 * Title: Controller.java
-* Author: Mike Schoonover
+* Author: Mike Schoonover, Hunter Schoonover
 * Date: 11/15/12
 *
 * Purpose:

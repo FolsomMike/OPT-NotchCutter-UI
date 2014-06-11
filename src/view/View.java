@@ -1,6 +1,6 @@
 /******************************************************************************
 * Title: View.java
-* Author: Mike Schoonover
+* Author: Mike Schoonover, Hunter Schoonover
 * Date: 3/12/13
 *
 * Purpose:
@@ -26,22 +26,16 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.font.TextAttribute;
-import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
@@ -77,7 +71,7 @@ public class View implements ActionListener, WindowListener
 
     private javax.swing.Timer mainTimer;
 
-    private EventHandler eventHandler;
+    private final EventHandler eventHandler;
 
     private Font blackSmallFont, redSmallFont;
     private Font redLargeFont, greenLargeFont, yellowLargeFont, blackLargeFont;
@@ -149,7 +143,7 @@ public void init()
 public void setupMainFrame()
 {
 
-    mainFrame = new JFrame("Model View Controller Template");
+    mainFrame = new JFrame("Notcher Master");
 
     //add a JPanel to the frame to provide a familiar container
     mainPanel = new JPanel();
