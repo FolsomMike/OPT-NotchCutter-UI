@@ -1,2 +1,0 @@
-Cat=Zebra
-Zebra=Cat

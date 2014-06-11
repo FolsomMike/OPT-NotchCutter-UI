@@ -76,14 +76,20 @@ public class View implements ActionListener, WindowListener
     private Font blackSmallFont, redSmallFont;
     private Font redLargeFont, greenLargeFont, yellowLargeFont, blackLargeFont;
     
+    private final int xPositionMainWindow;
+    private final int yPositionMainWindow;
+    
 //-----------------------------------------------------------------------------
 // View::View (constructor)
 //
 
-public View(EventHandler pEventHandler, ADataClass pADataClass)
+public View(EventHandler pEventHandler, int pXPositionMainWindow, 
+                            int pYPositionMainWindow, ADataClass pADataClass)
 {
 
     eventHandler = pEventHandler;
+    xPositionMainWindow = pXPositionMainWindow;
+    yPositionMainWindow = pYPositionMainWindow;
     aDataClass = pADataClass;
 
 }//end of View::View (constructor)
@@ -120,16 +126,8 @@ public void init()
 
     //create user interface: buttons, displays, etc.
     setupGui();
-
-    //arrange all the GUI items
-    mainFrame.pack();
-    
-    centerJFrame(mainFrame);
     
     mainFrame.setResizable(false);
-
-    //display the main frame
-    mainFrame.setVisible(true);
 
 }// end of View::init
 //-----------------------------------------------------------------------------
@@ -200,6 +198,47 @@ private void setupGui()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// View::positionMainFrame
+//
+// Sets x and y positions of the mainFrame to the variables passed in through
+// the constructor. If the defaults for the variables are set to default, the 
+// mainFrame is centered.
+//
+
+private void positionMainFrame()
+{
+    
+    int x;
+    if (xPositionMainWindow == Integer.MIN_VALUE) {
+        int screenWidth = (int)
+                    (Toolkit.getDefaultToolkit().getScreenSize().getWidth());
+        int frameWidth = (int)mainFrame.getWidth();
+        
+        x = screenWidth/2 - frameWidth/2;
+    }
+    else {
+        x = xPositionMainWindow;
+    }
+    
+    int y;
+    if (yPositionMainWindow == Integer.MIN_VALUE) {
+        int screenHeight = (int)
+                    (Toolkit.getDefaultToolkit().getScreenSize().getHeight());
+    
+        int frameHeight = (int)mainFrame.getHeight();
+        
+        y = screenHeight/2 - frameHeight/2;
+    }
+    else {
+        y = yPositionMainWindow;
+    }
+    
+    mainFrame.setLocation(x, y);
+
+}// end of View::positionMainFrame
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // View::createNotcherUI
 //
 // Creates a new NotcherUI and passes pEventHandler in as the EventHandler.
@@ -229,13 +268,28 @@ public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
         
     }
     
-    mainFrame.pack();
-    
-    centerJFrame(mainFrame);
-    
     return tempNotcherUI;
 
 }//end of View::createNotcherUI
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::finalizeAndDisplayMainFrame
+//
+// Finalizes and displays the mainFrame.
+//
+
+public void finalizeAndDisplayMainFrame()
+{
+
+    //arrange all the GUI items
+    mainFrame.pack();
+    
+    positionMainFrame();
+    
+    mainFrame.setVisible(true);
+
+}//end of View::finalizeAndDisplayMainFrame
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -420,11 +474,15 @@ protected static ImageIcon createImageIcon(String pPath)
 public void centerJFrame(JFrame pFrame)
 {
     
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    pFrame.setLocation((int)screenSize.getWidth()/2 - 
-                            (int)pFrame.getWidth()/2, 
-                            (int)screenSize.getHeight()/2 - 
-                            (int)pFrame.getHeight()/2);
+    int screenWidth = (int)
+                    (Toolkit.getDefaultToolkit().getScreenSize().getWidth());
+    int screenHeight = (int)
+                    (Toolkit.getDefaultToolkit().getScreenSize().getHeight());
+    int frameWidth = (int)pFrame.getWidth();
+    int frameHeight = (int)pFrame.getHeight();
+    
+    pFrame.setLocation((screenWidth/2 - frameWidth/2), 
+                                            (screenHeight/2 - frameHeight/2));
 
 }// end of View::centerJFrame
 //-----------------------------------------------------------------------------
