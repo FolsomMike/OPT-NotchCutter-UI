@@ -18,7 +18,7 @@
 
 //-----------------------------------------------------------------------------
 
-package chart.mksystems.inifile;
+package model;
 
 import java.awt.Color;
 import java.io.*;
@@ -495,7 +495,7 @@ String getValue(String pSection, String pKey, Parameters pParams)
             //set the index of the line containing the section name
             pParams.sectionIndex = i.previousIndex();
 
-        break;
+            break;
         }
     }
 
@@ -505,8 +505,8 @@ String getValue(String pSection, String pKey, Parameters pParams)
 
     //search the section for the key - if another section is found before finding
     //the key, then return empty string and the index of the section entry
+    
     //add '=' to the search phrase to make sure a partial match will fail
-
     String key = pKey.toLowerCase() + "=";
     StringBuilder line = new StringBuilder(200);
 
@@ -574,7 +574,7 @@ public int readInt(String pSection, String pKey, int pDefault)
 {
 
     //if the ini file was never loaded from memory, return the default
-    if (buffer == null) {return pDefault;}
+    if (buffer == null) {return(pDefault);}
 
     Parameters params = new Parameters();
 
@@ -823,51 +823,6 @@ public void writeDouble(String pSection, String pKey, double pValue)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// IniFile::writeColor
-//
-// Finds pSection and pKey in the buffer and sets the associated value to
-// pValue.
-//
-// If section and key are not found, the section and key are created and the
-// value is set to pValue.
-//
-// The modified flag will be set true so that the data buffer will be saved to
-// disk when this object is discarded.
-//
-
-public void writeColor(String pSection, String pKey, Color pColor)
-{
-
-    //create the new key=value string to store in the buffer
-    String newEntry = pKey + "=" + MColor.toString(pColor);
-
-    //update the value in the buffer
-    writeValue(pSection, pKey, newEntry);
-
-}//end of IniFile::writeColor
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// getDecimalFormat
-//
-// Returns a decimal format object with the number of digits after the decimal
-// point as specified by pPrecision.
-//
-
-DecimalFormat getDecimalFormat(int pPrecision)
-{
-
-    //if illegal value, use precision of 2
-    if ((pPrecision < 0) || (pPrecision >= DecimalFormats.length)){
-        pPrecision = 2;
-        }
-
-    return DecimalFormats[pPrecision];
-
-}//end of IniFile::getDecimalFormat
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // IniFile::writeDoubleFormatted
 //
 // Finds pSection and pKey in the buffer and sets the associated value to
@@ -895,6 +850,51 @@ public void writeDoubleFormatted(String pSection, String pKey, double pValue,
     writeValue(pSection, pKey, newEntry);
 
 }//end of IniFile::writeDoubleFormatted
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// getDecimalFormat
+//
+// Returns a decimal format object with the number of digits after the decimal
+// point as specified by pPrecision.
+//
+
+DecimalFormat getDecimalFormat(int pPrecision)
+{
+
+    //if illegal value, use precision of 2
+    if ((pPrecision < 0) || (pPrecision >= DecimalFormats.length)){
+        pPrecision = 2;
+        }
+
+    return DecimalFormats[pPrecision];
+
+}//end of IniFile::getDecimalFormat
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// IniFile::writeColor
+//
+// Finds pSection and pKey in the buffer and sets the associated value to
+// pValue.
+//
+// If section and key are not found, the section and key are created and the
+// value is set to pValue.
+//
+// The modified flag will be set true so that the data buffer will be saved to
+// disk when this object is discarded.
+//
+
+public void writeColor(String pSection, String pKey, Color pColor)
+{
+
+    //create the new key=value string to store in the buffer
+    String newEntry = pKey + "=" + MColor.toString(pColor);
+
+    //update the value in the buffer
+    writeValue(pSection, pKey, newEntry);
+
+}//end of IniFile::writeColor
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

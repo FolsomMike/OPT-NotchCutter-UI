@@ -1,6 +1,6 @@
 /******************************************************************************
 * Title: Controller.java
-* Author: Mike Schoonover
+* Author: Mike Schoonover, Hunter Schoonover
 * Date: 11/15/12
 *
 * Purpose:
@@ -39,13 +39,14 @@ package controller;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import model.ADataClass;
+import model.IniFile;
 import model.Options;
 import view.View;
-import view.MFloatSpinner;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -63,13 +64,13 @@ public class Controller implements EventHandler, Runnable
     
     private NotcherController[] notchControllerArray;
 
-    private Boolean blinkStatusLabel = false;
+    private final Boolean blinkStatusLabel = false;
 
     private String errorMessage;
 
     private SwingWorker workerThread;
 
-    private DecimalFormat decimalFormat1 = new DecimalFormat("#.0");
+    private final DecimalFormat decimalFormat1 = new DecimalFormat("#.0");
 
     private Font tSafeFont;
     private String tSafeText;
@@ -83,6 +84,7 @@ public class Controller implements EventHandler, Runnable
     private String XMLPageFromRemote;
 
     private boolean shutDown = false;
+    private boolean simulation;
 
     private final JFileChooser fileChooser = new JFileChooser();
 
@@ -91,7 +93,10 @@ public class Controller implements EventHandler, Runnable
     // hss wip -- should be removed after notchers
     // are detected on the network
     private static final int NCNUMBER = 4;
-
+    
+    private int xPositionMainWindow;
+    private int yPositionMainWindow;
+    
 //-----------------------------------------------------------------------------
 // Controller::Controller (constructor)
 //
@@ -111,10 +116,12 @@ public Controller()
 public void init()
 {
 
+    loadGeneralSettings();
+    
     aDataClass = new ADataClass();
     aDataClass.init();
 
-    view = new View(this, aDataClass);
+    view = new View(this, xPositionMainWindow, yPositionMainWindow, aDataClass);
     view.init();
 
     //create and load the program options
@@ -130,6 +137,32 @@ public void init()
     createNotcherControllers();
 
 }// end of Controller::init
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Controller::loadGeneralSettings
+//
+// Loads (and stores) the general settings for the progam from the 
+// GeneralSettings.ini file.
+//
+
+public void loadGeneralSettings()
+{
+
+    IniFile generalFile = new IniFile("GeneralSettings.ini", "UTF-8");
+    try {
+        generalFile.init();
+    } catch(IOException e) {
+        return;
+    }
+    
+    xPositionMainWindow = generalFile.readInt
+        ("General", "X Position of Main Window", Integer.MIN_VALUE);
+    yPositionMainWindow = generalFile.readInt
+        ("General", "Y Position of Main Window", Integer.MIN_VALUE);
+    simulation = generalFile.readBoolean("General", "simulation", false);
+
+}// end of Controller::loadGeneralSettings
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -168,6 +201,8 @@ public void createNotcherControllers()
         notchControllerArray[i].init();
     
     }
+    
+    view.finalizeAndDisplayMainFrame();
 
 }// end of Controller::createNotcherControllers
 //-----------------------------------------------------------------------------
@@ -269,11 +304,8 @@ public void saveDataToFile()
 public void doTimerActions()
 {
     
-    // calls all of the doTimerActions for each of the notcherContollers
-    for (int i = 0; i < notchControllerArray.length; i++) {
-        
-        notchControllerArray[i].doTimerActions();
-    
+    for (NotcherController notchControllerArray1 : notchControllerArray) {
+        notchControllerArray1.doTimerActions();
     }
     
 }//end of Controller::doTimerActions
@@ -378,9 +410,8 @@ private void doSomethingInWorkerThread()
             } catch (InterruptedException ignore) {}
             catch (java.util.concurrent.ExecutionException e) {
                 String why;
-                Throwable cause = e.getCause();
-                if (cause != null) {
-                    why = cause.getMessage();
+                if (e.getCause() != null) {
+                    why = e.getCause().getMessage();
                 } else {
                     why = e.getMessage();
                 }

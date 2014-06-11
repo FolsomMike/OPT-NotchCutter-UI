@@ -1,6 +1,6 @@
 /******************************************************************************
 * Title: View.java
-* Author: Mike Schoonover
+* Author: Mike Schoonover, Hunter Schoonover
 * Date: 3/12/13
 *
 * Purpose:
@@ -26,22 +26,16 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.font.TextAttribute;
-import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
@@ -77,19 +71,25 @@ public class View implements ActionListener, WindowListener
 
     private javax.swing.Timer mainTimer;
 
-    private EventHandler eventHandler;
+    private final EventHandler eventHandler;
 
     private Font blackSmallFont, redSmallFont;
     private Font redLargeFont, greenLargeFont, yellowLargeFont, blackLargeFont;
+    
+    private final int xPositionMainWindow;
+    private final int yPositionMainWindow;
     
 //-----------------------------------------------------------------------------
 // View::View (constructor)
 //
 
-public View(EventHandler pEventHandler, ADataClass pADataClass)
+public View(EventHandler pEventHandler, int pXPositionMainWindow, 
+                            int pYPositionMainWindow, ADataClass pADataClass)
 {
 
     eventHandler = pEventHandler;
+    xPositionMainWindow = pXPositionMainWindow;
+    yPositionMainWindow = pYPositionMainWindow;
     aDataClass = pADataClass;
 
 }//end of View::View (constructor)
@@ -126,16 +126,8 @@ public void init()
 
     //create user interface: buttons, displays, etc.
     setupGui();
-
-    //arrange all the GUI items
-    mainFrame.pack();
-    
-    centerJFrame(mainFrame);
     
     mainFrame.setResizable(false);
-
-    //display the main frame
-    mainFrame.setVisible(true);
 
 }// end of View::init
 //-----------------------------------------------------------------------------
@@ -149,7 +141,7 @@ public void init()
 public void setupMainFrame()
 {
 
-    mainFrame = new JFrame("Model View Controller Template");
+    mainFrame = new JFrame("Notcher Master");
 
     //add a JPanel to the frame to provide a familiar container
     mainPanel = new JPanel();
@@ -206,6 +198,47 @@ private void setupGui()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// View::positionMainFrame
+//
+// Sets x and y positions of the mainFrame to the variables passed in through
+// the constructor. If the defaults for the variables are set to default, the 
+// mainFrame is centered.
+//
+
+private void positionMainFrame()
+{
+    
+    int x;
+    if (xPositionMainWindow == Integer.MIN_VALUE) {
+        int screenWidth = (int)
+                    (Toolkit.getDefaultToolkit().getScreenSize().getWidth());
+        int frameWidth = (int)mainFrame.getWidth();
+        
+        x = screenWidth/2 - frameWidth/2;
+    }
+    else {
+        x = xPositionMainWindow;
+    }
+    
+    int y;
+    if (yPositionMainWindow == Integer.MIN_VALUE) {
+        int screenHeight = (int)
+                    (Toolkit.getDefaultToolkit().getScreenSize().getHeight());
+    
+        int frameHeight = (int)mainFrame.getHeight();
+        
+        y = screenHeight/2 - frameHeight/2;
+    }
+    else {
+        y = yPositionMainWindow;
+    }
+    
+    mainFrame.setLocation(x, y);
+
+}// end of View::positionMainFrame
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // View::createNotcherUI
 //
 // Creates a new NotcherUI and passes pEventHandler in as the EventHandler.
@@ -235,13 +268,28 @@ public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
         
     }
     
-    mainFrame.pack();
-    
-    centerJFrame(mainFrame);
-    
     return tempNotcherUI;
 
 }//end of View::createNotcherUI
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::finalizeAndDisplayMainFrame
+//
+// Finalizes and displays the mainFrame.
+//
+
+public void finalizeAndDisplayMainFrame()
+{
+
+    //arrange all the GUI items
+    mainFrame.pack();
+    
+    positionMainFrame();
+    
+    mainFrame.setVisible(true);
+
+}//end of View::finalizeAndDisplayMainFrame
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -426,11 +474,15 @@ protected static ImageIcon createImageIcon(String pPath)
 public void centerJFrame(JFrame pFrame)
 {
     
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    pFrame.setLocation((int)screenSize.getWidth()/2 - 
-                            (int)pFrame.getWidth()/2, 
-                            (int)screenSize.getHeight()/2 - 
-                            (int)pFrame.getHeight()/2);
+    int screenWidth = (int)
+                    (Toolkit.getDefaultToolkit().getScreenSize().getWidth());
+    int screenHeight = (int)
+                    (Toolkit.getDefaultToolkit().getScreenSize().getHeight());
+    int frameWidth = (int)pFrame.getWidth();
+    int frameHeight = (int)pFrame.getHeight();
+    
+    pFrame.setLocation((screenWidth/2 - frameWidth/2), 
+                                            (screenHeight/2 - frameHeight/2));
 
 }// end of View::centerJFrame
 //-----------------------------------------------------------------------------
