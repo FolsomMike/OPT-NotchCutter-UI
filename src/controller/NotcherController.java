@@ -292,11 +292,22 @@ public void saveDataToFile()
 
 public void doTimerActions()
 {
-
-    // hss wip -- simulation purposes should remove
-    simulateVoltageAndCurrentLevels();
     
 }//end of NotcherController::doTimerActions
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherController::doSimulationTimerActions
+//
+// Performs simulation actions driven by the timer.
+//
+
+public void doSimulationTimerActions()
+{
+
+    simulateVoltageAndCurrentLevels();
+    
+}//end of NotcherController::doSimulationTimerActions
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
