@@ -1,11 +1,11 @@
 /******************************************************************************
 * Title: FileHandler.java - Main file handler for the program
-* Author: Mike Schoonover
-* Date: 11/15/12
+* Author: Hunter Schoonover
+* Date: 06/10/14
 *
 * Purpose:
 *
-* This class reads and writes to different files. //hss wip.
+* This class reads and writes to different files.
 *
 *
 * Open Source Policy:
@@ -23,7 +23,6 @@ package model;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -140,9 +139,8 @@ public void parseKeyValuePair(String pLine)
     
     mapCollection.put(key, value);
 
-    //debug hss//
-    for (Map.Entry<String, String> entry : mapCollection.entrySet())
-    {
+    for (Map.Entry<String, String> entry : mapCollection.entrySet()) {
+        //debug hss
         System.out.println(entry.getKey() + "=" + entry.getValue());
     }
     
