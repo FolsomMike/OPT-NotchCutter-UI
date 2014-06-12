@@ -1,7 +1,7 @@
 /******************************************************************************
-* Title: ControlBoard.java
-* Author: Mike Schoonover
-* Date: 5/24/09
+* Title: Notcher.java
+* Author: Mike Schoonover, Hunter Schoonover
+* Date: 6/12/14
 *
 * Purpose:
 *
@@ -25,12 +25,12 @@ import view.Log;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// class ControlBoard
+// class Notcher
 //
-// This class creates and handles an interface to a Control board.
+// This class creates and handles an interface to a Notcher Unit.
 //
 
-public class ControlBoard extends Board{
+public class Notcher extends Board{
 
     byte[] monitorBuffer;
     byte[] allEncoderValuesBuf;
@@ -46,7 +46,7 @@ public class ControlBoard extends Board{
     int reSyncCount = 0, reSyncPktID;
     int timeOutWFP = 0; //used by processDataPackets
 
-    //Commands for Control boards
+    //Commands for Notcher units
     //These should match the values in the code for those boards.
 
     static byte NO_ACTION = 0;
@@ -60,7 +60,7 @@ public class ControlBoard extends Board{
     static byte DEBUG_CMD = 126;
     static byte EXIT_CMD = 127;
     
-    //Status Codes for Control boards
+    //Status Codes for Notcher units
     //These should match the values in the code for those boards.
 
     static byte NO_STATUS = 0;
@@ -70,29 +70,25 @@ public class ControlBoard extends Board{
     static int RUNTIME_PACKET_SIZE = 2048;
 
 //-----------------------------------------------------------------------------
-// UTBoard::UTBoard (constructor)
-//
-// The parameter configFile is used to load configuration data.  The IniFile
-// should already be opened and ready to access.
+// Notcher::Notcher (constructor)
 //
 
-public ControlBoard(IniFile pConfigFile, String pBoardName, int pBoardIndex,
+public Notcher(String pBoardName, int pBoardIndex,
   int pRuntimePacketSize, boolean pSimulate, Log pLog)
 {
 
     super(pLog);
 
-    configFile = pConfigFile;
     boardName = pBoardName;
     boardIndex = pBoardIndex;
     runtimePacketSize = pRuntimePacketSize;
     simulate = pSimulate;
 
-}//end of UTBoard::UTBoard (constructor)
+}//end of Notcher::Notcher (constructor)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::init
+// Notcher::init
 //
 // Initializes new objects. Should be called immediately after instantiation.
 //
@@ -107,11 +103,11 @@ public void init()
     //read the configuration file and create/setup the charting/control elements
     configure(configFile);
 
-}//end of ControlBoard::init
+}//end of Notcher::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::configure
+// Notcher::configure
 //
 // Loads configuration settings from pConfigFile.
 // The various child objects are then created as specified by the config data.
@@ -126,84 +122,41 @@ void configure(IniFile pConfigFile)
     inBuffer = new byte[RUNTIME_PACKET_SIZE];
     outBuffer = new byte[RUNTIME_PACKET_SIZE];
 
-}//end of ControlBoard::configure
+}//end of Notcher::configure
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::run
+// Notcher::connect
 //
-// This thread connects with the board and then sleeps.  It cannot be killed
-// or the socket will be closed.
-//
-
-@Override
-public void run() {
-
-    //link with all the remotes
-    connect();
-
-    //Since the sockets and associated streams were created by this
-    //thread, it cannot be closed without disrupting the connections. If
-    //other threads try to read from the socket after the thread which
-    //created the socket finishes, an exception will be thrown.  This
-    //thread just waits() after performing the connect function.  The
-    //alternative is to close the socket and allow another thread to
-    //reopen it, but this results in a lot of overhead.
-
-    waitForever();
-
-}//end of ControlBoard::run
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::waitForever
-//
-// Puts the thread in wait mode forever.
+// Opens a TCP/IP connection with the Notcher unit.
 //
 
-public synchronized void waitForever()
-{
-
-    while (true){
-        try{wait();}
-        catch (InterruptedException e) { }
-    }
-
-}//end of ControlBoard::waitForever
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::connect
-//
-// Opens a TCP/IP connection with the Control Board.
-//
-
-public synchronized void connect()
+public void connect()
 {
 
     if (ipAddrS == null || ipAddr == null){
         log.appendLine(
-                "Control board #" + boardIndex + " never responded to "
+                "Notcher Unit #" + boardIndex + " never responded to "
                 + "roll call and cannot be contacted.");
         return;
     }
 
-    log.appendLine("Opening connection with Control board...");
+    log.appendLine("Opening connection with Notcher...");
 
     try {
 
-        log.appendLine("Control Board IP Address: " + ipAddr.toString());
+        log.appendLine("Notcher Unit IP Address: " + ipAddr.toString());
 
         if (!simulate) {
             socket = new Socket(ipAddr, 23);
         }
         else {
 
-            ControlSimulator controlSimulator = 
-                                            new ControlSimulator( ipAddr, 23);
-            controlSimulator.init();
+            NotcherSimulator notcherSimulator = 
+                                            new NotcherSimulator( ipAddr, 23);
+            notcherSimulator.init();
             
-            socket = controlSimulator;
+            socket = notcherSimulator;
             
         }
 
@@ -240,15 +193,13 @@ public synchronized void connect()
     ready = true;
 
 
-    log.appendLine("Control " + ipAddrS + " is ready.");
+    log.appendLine("Notcher " + ipAddrS + " is ready.");
 
-    notifyAll(); //wake up all threads that are waiting for this to complete
-
-}//end of ControlBoard::connect
+}//end of Notcher::connect
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard:initialize
+// Notcher:initialize
 //
 // Sets up various settings on the board.
 //
@@ -256,11 +207,11 @@ public synchronized void connect()
 public void initialize()
 {
 
-}//end of ControlBoard::initialize
+}//end of Notcher::initialize
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::processOneDataPacket
+// Notcher::processOneDataPacket
 //
 // This function processes a single data packet if it is available.  If
 // pWaitForPkt is true, the function will wait until data is available.
@@ -350,11 +301,11 @@ public int processOneDataPacket(boolean pWaitForPkt, int pTimeOut)
 
     return 0;
 
-}//end of ControlBoard::processOneDataPacket
+}//end of Notcher::processOneDataPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::reSync
+// Notcher::reSync
 //
 // Clears bytes from the socket buffer until 0xaa byte reached which signals
 // the *possible* start of a new valid packet header or until the buffer is
@@ -396,11 +347,11 @@ public void reSync()
         logSevere(e.getMessage() + " - Error: 847");
     }
 
-}//end of ControlBoard::reSync
+}//end of Notcher::reSync
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::driveSimulation
+// Notcher::driveSimulation
 //
 // Drive any simulation functions if they are active.  This function is usually
 // called from a thread.
@@ -410,22 +361,22 @@ public void driveSimulation()
 {
 
     if (simulate && socket != null) {
-        ((ControlSimulator)socket).processDataPackets(false);
+        ((NotcherSimulator)socket).processDataPackets(false);
     }
 
-}//end of ControlBoard::driveSimulation
+}//end of Notcher::driveSimulation
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::various get/set functions
+// Notcher::various get/set functions
 //
 
 
-//end of ControlBoard::various get/set functions
+//end of Notcher::various get/set functions
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::getDataPacket
+// Notcher::getDataPacket
 //
 // This method sends a request to the remote unit for a data packet, waits
 // for it, and then returns a reference to the data array.
@@ -436,11 +387,11 @@ public byte[] getDataPacket()
 
     return(null);
     
-}//end of ControlBoard::getDataPacket
+}//end of Notcher::getDataPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::invokeCutMode
+// Notcher::invokeCutMode
 //
 // Sends "Cut" command to the remote.
 //
@@ -450,11 +401,11 @@ public void invokeCutMode()
     
     sendBytes(CUT_MODE_CMD, (byte) 0);
     
-}//end of ControlBoard::invokeCutMode
+}//end of Notcher::invokeCutMode
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::invokeStopMode
+// Notcher::invokeStopMode
 //
 // Sends "Stop" command to the remote.
 //
@@ -464,11 +415,11 @@ public void invokeStopMode()
 
     sendBytes(STOP_MODE_CMD, (byte) 0);
 
-}//end of ControlBoard::invokeStopMode
+}//end of Notcher::invokeStopMode
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::zeroDepthCount
+// Notcher::zeroDepthCount
 //
 // Sends "Zero Depth Count" command to the remote.
 //
@@ -478,11 +429,11 @@ public void zeroDepthCount()
 
     sendBytes(ZERO_DEPTH_CMD, (byte) 0);
     
-}//end of ControlBoard::zeroDepthCount
+}//end of Notcher::zeroDepthCount
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::zeroTargetDepth
+// Notcher::zeroTargetDepth
 //
 // Sends "Zero Target Depth " command to the remote.
 //
@@ -492,11 +443,11 @@ public void zeroTargetDepth()
 
     sendBytes(ZERO_TARGET_DEPTH_CMD, (byte) 0);
     
-}//end of ControlBoard::zeroDepthCount
+}//end of Notcher::zeroDepthCount
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::loadCalFile
+// Notcher::loadCalFile
 //
 // This loads the file used for storing calibration information such as cut
 // depth, cut speed, cut aggression, etc.
@@ -508,11 +459,11 @@ public void zeroTargetDepth()
 public void loadCalFile(model.IniFile pCalFile)
 {
 
-}//end of ControlBoard::loadCalFile
+}//end of Notcher::loadCalFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::saveCalFile
+// Notcher::saveCalFile
 //
 // This saves the file used for storing calibration information such as cut
 // depth, cut speed, cut aggression, etc.
@@ -524,11 +475,11 @@ public void loadCalFile(model.IniFile pCalFile)
 public void saveCalFile(model.IniFile pCalFile)
 {
 
-}//end of ControlBoard::saveCalFile
+}//end of Notcher::saveCalFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::shutDown
+// Notcher::shutDown
 //
 // This function should be called before exiting the program.  Overriding the
 // "finalize" method does not work as it does not get called reliably upon
@@ -553,9 +504,9 @@ protected void shutDown()
         logSevere(e.getMessage() + " - Error: 1009");
     }
 
-}//end of ControlBoard::shutDown
+}//end of Notcher::shutDown
 //-----------------------------------------------------------------------------
 
-}//end of class ControlBoard
+}//end of class Notcher
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

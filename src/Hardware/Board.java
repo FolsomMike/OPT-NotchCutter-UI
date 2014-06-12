@@ -53,7 +53,7 @@ class InstallFirmwareSettings extends Object{
 //
 //
 
-public abstract class Board extends Object implements Runnable{
+public abstract class Board extends Object{
 
     String simulationDataSourceFilePath = "";
     
@@ -475,22 +475,6 @@ public void waitSleep(int pTime)
     try {Thread.sleep(pTime);} catch (InterruptedException e) { }
 
 }//end of Board::waitSleep
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Board::waitForConnectCompletion
-//
-// Waits until the setupComplete flag is true.
-//
-
-public synchronized void waitForConnectCompletion()
-{
-
-    while(!setupComplete){
-        try {wait(); } catch (InterruptedException e) { }
-    }
-
-}//end of Board::waitForConnectCompletion
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

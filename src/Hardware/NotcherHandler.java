@@ -1,24 +1,15 @@
 /******************************************************************************
-* Title: Capulin1.java
-* Author: Mike Schoonover
+* Title: NotcherHandler.java
+* Author: Mike Schoonover, Hunter Schoonover
 * Date: 4/23/09
 *
 * Purpose:
 *
-* This class handles the Capulin1 functions.
+* This class handles the Notcher communications.
 *
 * 
-* 
-* 
-* 
+*
 * wip hss --
-* 
-*   ControlBoards (or controlBoards, etc.) are now Notchers. Replace all
-*   occurrences of those words. Replace all occurrences of "Control" with
-*   appropriate phrase as well.
-* 
-*   This class was "Capulin" -- change all occurrence of that word to
-*   "NotcherHandler".
 * 
 * wip hss end
 * 
@@ -44,7 +35,7 @@ import view.Log;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// class Capulin1
+// class NotcherHandler
 //
 // This class creates and handles the hardware interface.
 //
@@ -55,12 +46,10 @@ public class NotcherHandler extends Object{
 
     boolean simulateControlBoards;
     
-    ControlBoard[] controlBoards;
+    Notcher[] controlBoards;
     int numberOfControlBoards;
 
     boolean logEnabled = true;
-
-    IniFile configFile;
 
     Log log;
 
@@ -69,35 +58,28 @@ public class NotcherHandler extends Object{
     byte[] pktBuffer;
     
     int opMode = STOPPED_MODE;
-
-    //flags to signal "Main Thread" from the GUI thread to perform an action
-    //involving the socket -- used to prevent thread collisions
-
-    boolean invokeStopModeTrigger = false;
-    boolean invokeCutModeTrigger = false;
         
     static final int STOPPED_MODE = 0;
     static final int CUT_MODE = 1;
     
 //-----------------------------------------------------------------------------
-// Capulin1::Capulin1 (constructor)
+// NotcherHandler::NotcherHandler (constructor)
 //
 // The parameter configFile is used to load configuration data.  The IniFile
 // should already be opened and ready to access.
 //
 
-NotcherHandler(IniFile pConfigFile, Log pLog)
+public NotcherHandler(Log pLog)
 
 {
 
-    configFile = pConfigFile;
     log = pLog;
 
-}//end of Capulin1::Capulin1 (constructor)
+}//end of NotcherHandler::NotcherHandler (constructor)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::init
+// NotcherHandler::init
 //
 // Initializes the object.  MUST be called by sub classes after instantiation.
 //
@@ -107,14 +89,11 @@ public void init()
 
     pktBuffer = new byte[RUNTIME_PACKET_SIZE];
 
-    //load configuration settings
-    configure(configFile);
-
-}//end of Capulin1::init
+}//end of NotcherHandler::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::configure
+// NotcherHandler::configure
 //
 // Loads configuration settings from the configuration.ini file.  These set
 // the number and style of channels, gates, etc.
@@ -133,11 +112,11 @@ private void configure(IniFile pConfigFile)
     //create and setup the Control boards
     configureControlBoards();
 
-}//end of Capulin1::configure
+}//end of NotcherHandler::configure
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::connect
+// NotcherHandler::connect
 //
 // Establishes a connection with each board.
 //
@@ -167,20 +146,20 @@ private void configure(IniFile pConfigFile)
 // This does not affect communication with the Rabbits and the warning may be
 // ignored.
 
-public void connect() throws InterruptedException
+public void connect()
 {
 
     NetworkInterface iFace;
 
     iFace = findNetworkInterface();
 
-    connectControlBoard(iFace);
+    connectControlBoards(iFace);
 
-}//end of Capulin1::connect
+}//end of NotcherHandler::connect
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::connectControlBoards
+// NotcherHandler::connectControlBoards
 //
 // Opens a TCP/IP connection with the Control Board.
 //
@@ -190,8 +169,7 @@ public void connect() throws InterruptedException
 // interface connected to the remotes.
 //
 
-public void connectControlBoard(NetworkInterface pNetworkInterface)
-                                                    throws InterruptedException
+public void connectControlBoards(NetworkInterface pNetworkInterface)
 {
 
     log.appendLine("Broadcasting greeting to all Control boards...");
@@ -316,39 +294,24 @@ public void connectControlBoard(NetworkInterface pNetworkInterface)
     //bail out if no boards responded
     if (responseCount == 0) {return;}
 
-    //start the run method of each ControlBoard thread class - the run method
-    //makes the TCP/IP connections and uploads FPGA and DSP code simultaneously
-    //to shorten start up time
+    // allow each unit to connect to the remote
 
     if (responseCount > 0){
         for (int i = 0; i < numberOfControlBoards; i++){
-            //pass the Runnable interfaced controlBoard object to a thread and
-            //start the run function of the controlBoard will peform the
-            //connection tasks
-            Thread thread = new Thread(controlBoards[i], "Control Board " + i);
-            thread.start();
+            controlBoards[i].connect();
         }
     }//if (responseCount > 0)
-
-    //call each board and wait for it to complete its connection & initial setup
-    //note that this object cannot even enter the synchronized method
-    //waitForconnectCompletion until controlBoard.connect completes because
-    //connect is also synchronized
-
-    for (int i = 0; i < numberOfControlBoards; i++) {
-        controlBoards[i].waitForConnectCompletion();
-    }
 
     log.appendLine("All Control boards ready.");
 
     //initialize each Control board
     initializeControlBoards();
 
-}//end of Capulin1::connectControlBoards
+}//end of NotcherHandler::connectControlBoards
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1:findNetworkInterface
+// NotcherHandler:findNetworkInterface
 //
 // Finds the network interface for communication with the remotes. Returns
 // null if no suitable interface found.
@@ -410,11 +373,11 @@ public NetworkInterface findNetworkInterface()
     
     return(iFace);
 
-}//end of Capulin1::findNetworkInterface
+}//end of NotcherHandler::findNetworkInterface
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::initializeControlBoards
+// NotcherHandler::initializeControlBoards
 //
 // Sets up each Control board with various settings.
 //
@@ -427,11 +390,11 @@ public void initializeControlBoards()
         if (controlBoards[i] != null) { controlBoards[i].initialize(); }
     }
 
-}//end of Capulin1::initializeControlBoards
+}//end of NotcherHandler::initializeControlBoards
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::driveSimulation
+// NotcherHandler::driveSimulation
 //
 // Drive any simulation functions if they are active.  This function is usually
 // called from a thread.
@@ -446,11 +409,11 @@ public void driveSimulation()
         }
     }
 
-}//end of Capulin1::driveSimulation
+}//end of NotcherHandler::driveSimulation
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::logStatus
+// NotcherHandler::logStatus
 //
 // Writes various status and error messages to the log window.
 //
@@ -458,11 +421,11 @@ public void driveSimulation()
 public void logStatus(Log pLogWindow)
 {
 
-}//end of Capulin1::logStatus
+}//end of NotcherHandler::logStatus
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::shutDown
+// NotcherHandler::shutDown
 //
 // This function should be called before exiting the program.  Overriding the
 // "finalize" method does not work as it does not get called reliably upon
@@ -478,11 +441,11 @@ public void shutDown()
         }
     }
 
-}//end of Capulin1::shutDown
+}//end of NotcherHandler::shutDown
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::loadCalFile
+// NotcherHandler::loadCalFile
 //
 // This loads the file used for storing calibration information such as cut
 // depth, cut speed, cut aggression, etc.
@@ -505,11 +468,11 @@ public void loadCalFile(IniFile pCalFile)
         controlBoards[i].loadCalFile(pCalFile);
     }
 
-}//end of Capulin1::loadCalFile
+}//end of NotcherHandler::loadCalFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::saveCalFile
+// NotcherHandler::saveCalFile
 //
 // This saves the file used for storing calibration information such as cut
 // depth, cut speed, cut aggression, etc.
@@ -531,11 +494,11 @@ public void saveCalFile(IniFile pCalFile)
         controlBoards[i].saveCalFile(pCalFile);
     }
 
-}//end of Capulin1::saveCalFile
+}//end of NotcherHandler::saveCalFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::displayMessages
+// NotcherHandler::displayMessages
 //
 // Displays any messages received from the remote.
 //
@@ -546,11 +509,11 @@ public void saveCalFile(IniFile pCalFile)
 public void displayMessages()
 {
 
-}//end of Capulin1::displayMessages
+}//end of NotcherHandler::displayMessages
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::doTasks
+// NotcherHandler::doTasks
 //
 // Should be called by a timer so that various tasks can be performed as
 // necessary.  Since Java doesn't update the screen during calls to the user
@@ -563,39 +526,37 @@ public void doTasks()
 
     displayMessages();
 
-}//end of Capulin1::doTasks
+}//end of NotcherHandler::doTasks
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::setMode
+// NotcherHandler::setMode
 //
-// Sets the mode to CUT, STOPPED, etc.
+// Sets the mode to CUT, STOPPED, etc. for unit with IP address pIP.
 //
 
-public void setMode(int pOpMode)
+public void setMode(String pIP, int pOpMode)
 {
 
     opMode = pOpMode;
 
     if (opMode == NotcherHandler.CUT_MODE){
 
-        //trigger "Main Thread" to enter the mode
-        invokeCutModeTrigger = true;
+        invokeCutMode(pIP);
         
     }
 
     if (opMode == NotcherHandler.STOPPED_MODE){
 
-        //trigger "Main Thread" to enter the mode
-        invokeStopModeTrigger = true;
+        invokeStopMode(pIP);
             
     }
 
-}//end of Capulin1::setMode
+}//end of NotcherHandler::setMode
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::invokeCutMode
+// NotcherHandler::invokeCutMode
 //
 // Puts unit with IP address pIP in Cut mode.
 //
@@ -603,14 +564,14 @@ public void setMode(int pOpMode)
 private void invokeCutMode(String pIP)
 {
     
-    ControlBoard n = findUnitByIP(pIP);
+    Notcher n = findUnitByIP(pIP);
     if (n != null) n.invokeCutMode();
 
-}//end of Capulin1::invokeCutMode
+}//end of NotcherHandler::invokeCutMode
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::invokeStopMode
+// NotcherHandler::invokeStopMode
 //
 // Puts unit with IP address pIP in Stop mode.
 //
@@ -618,14 +579,14 @@ private void invokeCutMode(String pIP)
 private void invokeStopMode(String pIP)
 {
 
-    ControlBoard n = findUnitByIP(pIP);
+    Notcher n = findUnitByIP(pIP);
     if (n != null) n.invokeStopMode();    
         
-}//end of Capulin1::invokeStopMode
+}//end of NotcherHandler::invokeStopMode
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::getMonitorPacket
+// NotcherHandler::getMonitorPacket
 //
 // Returns monitoring data from unit with IP address pIP.
 //
@@ -633,7 +594,7 @@ private void invokeStopMode(String pIP)
 public byte[] getMonitorPacket(String pIP)
 {
 
-    ControlBoard n = findUnitByIP(pIP);
+    Notcher n = findUnitByIP(pIP);
     
     if (n == null){
         return(null);
@@ -642,11 +603,11 @@ public byte[] getMonitorPacket(String pIP)
         return n.getDataPacket();
     }
 
-}//end of Capulin1::getMonitorPacket
+}//end of NotcherHandler::getMonitorPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::zeroDepthCount
+// NotcherHandler::zeroDepthCount
 //
 // Sends command to zero the depth count to unit with IP address pIP.
 //
@@ -654,14 +615,14 @@ public byte[] getMonitorPacket(String pIP)
 public void zeroDepthCount(String pIP)
 {
 
-    ControlBoard n = findUnitByIP(pIP);
+    Notcher n = findUnitByIP(pIP);
     if (n != null) n.zeroDepthCount();
 
-}//end of Capulin1::zeroEncoderCount
+}//end of NotcherHandler::zeroEncoderCount
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::configureControlBoards
+// NotcherHandler::configureControlBoards
 //
 // Loads configuration settings from the configuration.ini file relating to
 // the boards and creates/sets them up.
@@ -673,7 +634,7 @@ private void configureControlBoards()
     //create an array of boards per the config file setting
     if (numberOfControlBoards > 0){
 
-        controlBoards = new ControlBoard[numberOfControlBoards];
+        controlBoards = new Notcher[numberOfControlBoards];
 
         //pass the config filename instead of the configFile already opened
         //because the UTBoards have to create their own iniFile objects to read
@@ -681,7 +642,7 @@ private void configureControlBoards()
         //threadsafe
 
         for (int i = 0; i < numberOfControlBoards; i++) {
-            controlBoards[i] = new ControlBoard(configFile, "Control " + (i+1),
+            controlBoards[i] = new Notcher("Control " + (i+1),
                     i, RUNTIME_PACKET_SIZE, simulateControlBoards, log);
             controlBoards[i].init();
 
@@ -689,18 +650,18 @@ private void configureControlBoards()
 
     }//if (numberOfControlBoards > 0)
     
-}//end of Capulin1::configureControlBoards
+}//end of NotcherHandler::configureControlBoards
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::findUnitByIP
+// NotcherHandler::findUnitByIP
 //
 // Finds the Notcher object in the array which has IP address of pIP.
 //
 // Returns reference to the notcher or null if no match found.
 //
 
-ControlBoard findUnitByIP(String pIP)
+Notcher findUnitByIP(String pIP)
 {
     
     for (int i = 0; i < numberOfControlBoards; i++) {
@@ -713,11 +674,10 @@ ControlBoard findUnitByIP(String pIP)
     
     return(null);
     
-}//end of Capulin1::findUnitByIP
-//-----------------------------------------------------------------------------
+}//end of NotcherHandler::findUnitByIP
 
 //-----------------------------------------------------------------------------
-// Capulin1::getSimulate
+// NotcherHandler::getSimulate
 //
 // Returns the simulate flag.  This flag is set if any simulation is being
 // performed so that outside classes can adjust accordingly, such as by
@@ -729,25 +689,28 @@ public boolean getSimulate()
     
     return (simulateControlBoards);
 
-}//end of Capulin1::getSimulate
+}//end of NotcherHandler::getSimulate
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::waitSleep
+// NotcherHandler::waitSleep
 //
 // Sleeps for pTime milliseconds.
 //
 
-void waitSleep(int pTime) throws InterruptedException
+void waitSleep(int pTime)
 {
 
-    Thread.sleep(pTime);
+    try{
+        Thread.sleep(pTime);
+    }
+    catch(InterruptedException e){}
 
-}//end of Capulin1::waitSleep
+}//end of NotcherHandler::waitSleep
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::setUDPResponseFlag
+// NotcherHandler::setUDPResponseFlag
 //
 // Sets the udpResponseFlag true in the Notcher which has an ipAddress matching
 // pIPAddress.
@@ -765,11 +728,11 @@ void setUDPResponseFlag(String pIPAddress)
         }
     }
 
-}//end of Capulin1::setUDPResponseFlag
+}//end of NotcherHandler::setUDPResponseFlag
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::displayUnresponsiveIPAddresses
+// NotcherHandler::displayUnresponsiveIPAddresses
 //
 // Displays a list of units which do not have their udp flag set.
 //
@@ -786,11 +749,11 @@ void displayUnresponsiveIPAddresses()
         }
     }
 
-}//end of Capulin1::displayUnresponsiveIPAddresses
+}//end of NotcherHandler::displayUnresponsiveIPAddresses
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::sendByteUDP
+// NotcherHandler::sendByteUDP
 //
 // Sends pByte via the UDP socket pSocket using pOutPacket.
 //
@@ -809,11 +772,11 @@ void sendByteUDP(DatagramSocket pSocket, DatagramPacket pOutPacket, byte pByte)
         logSevere(e.getMessage() + " - Error: 1995");
     }
 
-}//end of Capulin1::sendByteUDP
+}//end of NotcherHandler::sendByteUDP
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::logSevere
+// NotcherHandler::logSevere
 //
 // Logs pMessage with level SEVERE using the Java logger.
 //
@@ -823,11 +786,11 @@ void logSevere(String pMessage)
 
     Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage);
 
-}//end of Capulin1::logSevere
+}//end of NotcherHandler::logSevere
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Capulin1::logStackTrace
+// NotcherHandler::logStackTrace
 //
 // Logs stack trace info for exception pE with pMessage at level SEVERE using
 // the Java logger.
@@ -838,9 +801,9 @@ void logStackTrace(String pMessage, Exception pE)
 
     Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage, pE);
 
-}//end of Capulin1::logStackTrace
+}//end of NotcherHandler::logStackTrace
 //-----------------------------------------------------------------------------
 
-}//end of class Capulin1
+}//end of class NotcherHandler
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
