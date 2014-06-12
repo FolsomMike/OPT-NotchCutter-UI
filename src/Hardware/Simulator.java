@@ -22,7 +22,6 @@
 
 package Hardware;
 
-import chart.mksystems.inifile.IniFile;
 import java.io.*;
 import java.net.*;
 import java.text.DecimalFormat;
@@ -46,33 +45,16 @@ public Simulator() throws SocketException{}; //default constructor - not used
     boolean enabled = false;
     int type;
     
-    double distanceMapSensorToFrontEdgeOfHead;
-
     int index;
 
     int currentDataSetIndex = 1;
     
     final DecimalFormat dataSetIndexFormat = new DecimalFormat("0000000");
     
-    String mainFileFormat;
-    IniFile configFile;
-    
-    String simulationDataSourceFilePath;
-    
     boolean reSynced;
     int reSyncCount = 0;
 
     public static int instanceCounter = 0;
-
-    protected int simulationType = RANDOM;
-    
-    protected static final int RANDOM = 0;
-    protected static final int FROM_FILE = 1;
-    
-    protected static final int BASIC_PEAK_COLLECTOR = 1;
-    protected static final int WALL_MAPPER = 2;
-
-    int chassisAddr, slotAddr;
 
     byte status = 0;
 
@@ -106,13 +88,10 @@ public Simulator() throws SocketException{}; //default constructor - not used
 // Simulator::Simulator (constructor)
 //
 
-public Simulator(InetAddress pIPAddress, int pPort,
-        String pSimulationDataSourceFilePath) throws SocketException
+public Simulator(InetAddress pIPAddress, int pPort) throws SocketException
 {
 
     port = pPort; ipAddr = pIPAddress;
-
-    simulationDataSourceFilePath = pSimulationDataSourceFilePath;
         
     //give each instance of the class a unique number
     //this can be used to provide a unique simulated IP address
@@ -171,19 +150,6 @@ public Simulator(InetAddress pIPAddress, int pPort,
 public void init(int pBoardNumber)
 {
 
-    //load general configuration data from file
-    try{
-        configureMain(pBoardNumber);
-    }
-    catch(IOException e){
-        return;
-    }
-
-    //load detailed simulation configuration if file path set
-    if(simulationType == FROM_FILE){
-        configureSimulationDataSet();
-    }
-
 }//end of Simulator::init
 //-----------------------------------------------------------------------------
 
@@ -224,24 +190,6 @@ public void reSync()
     }
 
 }//end of Simulator::reSync
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Simulator::getChassisSlotAddress
-//
-// Returns the chassis and slot address for the simulated board.
-//
-
-void getChassisSlotAddress()
-{
-
-    byte address = (byte)((chassisAddr << 4) & 0xf0);
-
-    address += (byte)(slotAddr & 0x0f);
-
-    sendBytes(address, (byte)0);
-
-}//end of Simulator::getChassisSlotAddress
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -435,110 +383,6 @@ public int getIntFromSocket()
     return (int)((inBuffer[0]<<8) & 0xff00) + (inBuffer[1] & 0xff);
 
 }//end of Simulator::getIntFromSocket
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Simulator::configureMain
-//
-// Loads configuration settings from the "01 - Simulation Main Info.ini" file.
-// The various child objects are then created as specified by the config data.
-//
-// This info handles all set up for use with all the file in the
-// specified simulation source data folder. In addition, each group of
-// simulation files also has a config file specific to that group. Each group
-// generally provides data for a different run, so different sets of data can
-// be simulated for subsequent runs.
-//
-// Each instance must open its own iniFile object because they are created
-// simultaneously in different threads.  The iniFile object is not guaranteed
-// to be thread safe.
-//
-
-public void configureMain(int pBoardNumber) throws IOException
-{
-
-    String fullPath = simulationDataSourceFilePath + 
-                                            "01 - Simulation Main Info.ini";
-    
-    configFile = new IniFile(fullPath, mainFileFormat);
-    configFile.init();
-        
-}//end of Simulator::configureMain
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Simulator::configureSimulationDataSet
-//
-// Loads configuration settings for the data set to be used for the current run.
-// Each simulation data source folder may contain multiple data sets, each with
-// a different identifying number. These different sets are used to provide a
-// different simulation for each successive run.
-//
-
-public void configureSimulationDataSet()
-{
-
-    
-}//end of Simulator::configureSimulationDataSet
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Simulator::createSimulationDataFilename
-//
-// Creates a filename to load a simulation data set file using the appropriate
-// path, the current data set index, and the supplied prefix and suffix.
-//
-
-protected String createSimulationDataFilename(String pPrefix, String pSuffix)
-{
-
-    return(simulationDataSourceFilePath + pPrefix
-          + dataSetIndexFormat.format(currentDataSetIndex)
-          + pSuffix);
-
-}//end of Simulator::createSimulationDataFilename
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Simulator::parseBoardType
-//
-// Sets various flags and variables appropriate to the type of board specified
-// by pValue.
-//
-
-void parseBoardType(String pValue)
-{
-
-    if (pValue.equalsIgnoreCase("Basic Peak Collector")) {
-        type = BASIC_PEAK_COLLECTOR;
-    }
-    else
-    if (pValue.equalsIgnoreCase("Wall Mapper")) {
-        type = WALL_MAPPER;
-    }
-
-}//end of Simulator::parseBoardType
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Simulator::parseSimulationType
-//
-// Sets various flags and variables appropriate to the type of simulation
-// specified by pValue.
-//
-
-void parseSimulationType(String pValue)
-{
-
-    if (pValue.equalsIgnoreCase("Random")) {
-        simulationType = RANDOM;
-    }
-    else
-    if (pValue.equalsIgnoreCase("From File")) {
-        simulationType = FROM_FILE;
-    }
-
-}//end of Simulator::parseSimulationType
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

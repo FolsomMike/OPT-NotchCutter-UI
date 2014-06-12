@@ -5,7 +5,7 @@
 *
 * Purpose:
 *
-* This class interfaces with a Capulin Control board.
+* This class interfaces with a NotchCutter unit.
 *
 * Open Source Policy:
 *
@@ -18,12 +18,10 @@
 
 package Hardware;
 
-import chart.MessageLink;
-import chart.mksystems.inifile.IniFile;
-import chart.mksystems.tools.SwissArmyKnife;
+import model.IniFile;
 import java.io.*;
 import java.net.*;
-import javax.swing.*;
+import view.Log;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -32,89 +30,32 @@ import javax.swing.*;
 // This class creates and handles an interface to a Control board.
 //
 
-public class ControlBoard extends Board implements MessageLink,
-                                                    AudibleAlarmController{
+public class ControlBoard extends Board{
 
     byte[] monitorBuffer;
     byte[] allEncoderValuesBuf;
-    String fileFormat;
 
+    boolean udpResponseFlag = false;
+    
     int packetRequestTimer = 0;
 
     int runtimePacketSize;
 
-    MessageLink mechSimulator = null;
-
     int pktID;
-    boolean encoderDataPacketProcessed = false;
     boolean reSynced;
     int reSyncCount = 0, reSyncPktID;
     int timeOutWFP = 0; //used by processDataPackets
-
-    boolean newInspectPacketReady = false;
-
-    int encoder1, prevEncoder1;
-    int encoder2, prevEncoder2;
-    int encoder1Dir, encoder2Dir;
-
-    EncoderValues encoderValues;
-    
-    int inspectPacketCount = 0;
-
-    boolean onPipeFlag = false;
-    boolean inspectControlFlag = false;
-    boolean head1Down = false;
-    boolean head2Down = false;
-    boolean tdcFlag = false;
-    boolean unused1Flag = false;
-    boolean unused2Flag = false;
-    boolean unused3Flag = false;
-    byte controlPortA, controlPortE;
-    byte processControlFlags;
-
-    //number of counts each encoder moves to trigger an inspection data packet
-    //these values are read later from the config file
-    int encoder1DeltaTrigger, encoder2DeltaTrigger;
-
-    protected boolean audibleAlarmController;
-    protected int audibleAlarmOutputChannel;
-    protected String audibleAlarmPulseDuration;
-
-    // values for the Rabbits control flag - only lower 16 bits are used
-    // as the corresponding variable in the Rabbit is an unsigned int
-
-    // transmit tracking pulse to DSPs for every o'clock position and a reset
-    // pulse at every TDC
-    static final int RABBIT_SEND_CLOCK_MARKERS = 0x0001;
-    // transmit a single pulse at every TDC detection
-    static final int RABBIT_SEND_TDC = 0x0002;
-    // enables sending of track sync pulses (doesn't affect track reset pulses)
-    static final int TRACK_PULSES_ENABLED = 0x0004;
 
     //Commands for Control boards
     //These should match the values in the code for those boards.
 
     static byte NO_ACTION = 0;
-    static byte GET_INSPECT_PACKET_CMD = 1;
-    static byte ZERO_ENCODERS_CMD = 2;
-    static byte GET_MONITOR_PACKET_CMD = 3;
-    static byte PULSE_OUTPUT_CMD = 4;
-    static byte TURN_ON_OUTPUT_CMD = 5;
-    static byte TURN_OFF_OUTPUT_CMD = 6;
-    static byte SET_ENCODERS_DELTA_TRIGGER_CMD = 7;
-    static byte START_INSPECT_CMD = 8;
-    static byte STOP_INSPECT_CMD = 9;
-    static byte START_MONITOR_CMD = 10;
-    static byte STOP_MONITOR_CMD = 11;
-    static byte GET_STATUS_CMD = 12;
-    static byte LOAD_FIRMWARE_CMD = 13;
-    static byte SEND_DATA_CMD = 14;
-    static byte DATA_CMD = 15;
-    static byte GET_CHASSIS_SLOT_ADDRESS_CMD = 16;
-    static byte SET_CONTROL_FLAGS_CMD = 17;
-    static byte RESET_TRACK_COUNTERS_CMD = 18;
-    static byte GET_ALL_ENCODER_VALUES_CMD = 19;
-
+    static byte STOP_MODE_CMD = 1;
+    static byte CUT_MODE_CMD = 2;
+    static byte ZERO_DEPTH_CMD = 3;
+    static byte ZERO_TARGET_DEPTH_CMD = 4;
+    static byte GET_DATA_PACKET_CMD = 5;
+    
     static byte ERROR = 125;
     static byte DEBUG_CMD = 126;
     static byte EXIT_CMD = 127;
@@ -128,26 +69,6 @@ public class ControlBoard extends Board implements MessageLink,
     static int ALL_ENCODERS_PACKET_SIZE = 24;    
     static int RUNTIME_PACKET_SIZE = 2048;
 
-    //Masks for the Control Board inputs
-
-    static byte UNUSED1_MASK = (byte)0x10;	// bit on Port A
-    static byte UNUSED2_MASK = (byte)0x20;	// bit on Port A
-    static byte INSPECT_MASK = (byte)0x40;	// bit on Port A
-    static byte ON_PIPE_MASK = (byte)0x80;	// bit on Port A ??no longer true??
-    static byte TDC_MASK = (byte)0x01;    	// bit on Port E
-    static byte UNUSED3_MASK = (byte)0x20;	// bit on Port E
-
-    //Masks for the Control Board command flags
-
-    static byte ON_PIPE_CTRL =      (byte)0x01;
-    static byte HEAD1_DOWN_CTRL =   (byte)0x02;
-    static byte HEAD2_DOWN_CTRL =   (byte)0x04;
-    static byte UNUSED1_CTRL =      (byte)0x08;
-    static byte UNUSED2_CTRL =      (byte)0x10;
-    static byte UNUSED3_CTRL =      (byte)0x20;
-    static byte UNUSED4_CTRL =      (byte)0x40;
-    static byte UNUSED5_CTRL =      (byte)0x80;
-
 //-----------------------------------------------------------------------------
 // UTBoard::UTBoard (constructor)
 //
@@ -156,7 +77,7 @@ public class ControlBoard extends Board implements MessageLink,
 //
 
 public ControlBoard(IniFile pConfigFile, String pBoardName, int pBoardIndex,
-  int pRuntimePacketSize, boolean pSimulate, JTextArea pLog, String pFileFormat)
+  int pRuntimePacketSize, boolean pSimulate, Log pLog)
 {
 
     super(pLog);
@@ -166,7 +87,6 @@ public ControlBoard(IniFile pConfigFile, String pBoardName, int pBoardIndex,
     boardIndex = pBoardIndex;
     runtimePacketSize = pRuntimePacketSize;
     simulate = pSimulate;
-    fileFormat = pFileFormat;
 
 }//end of UTBoard::UTBoard (constructor)
 //-----------------------------------------------------------------------------
@@ -181,8 +101,6 @@ public void init()
 {
 
     monitorBuffer = new byte[MONITOR_PACKET_SIZE];
-
-    encoderValues = new EncoderValues(); encoderValues.init();
     
     allEncoderValuesBuf = new byte[ALL_ENCODERS_PACKET_SIZE];
     
@@ -204,118 +122,11 @@ void configure(IniFile pConfigFile)
 {
 
     super.configure(pConfigFile);
-
-    simulationDataSourceFilePath = SwissArmyKnife.formatPath(
-       pConfigFile.readString("Hardware", 
-                                      "Simulation Data Source File Path", ""));
         
     inBuffer = new byte[RUNTIME_PACKET_SIZE];
     outBuffer = new byte[RUNTIME_PACKET_SIZE];
 
-    //debug mks -- calculate this delta to give one packet per pixel????
-
-    encoder1DeltaTrigger =
-          pConfigFile.readInt("Hardware", "Encoder 1 Delta Count Trigger", 83);
-
-    encoder2DeltaTrigger =
-          pConfigFile.readInt("Hardware", "Encoder 2 Delta Count Trigger", 83);
-
 }//end of ControlBoard::configure
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::configureExtended
-//
-// Loads further configuration settings from the configuration.ini file.
-// These settings are tagged using the boards chassis and slot addresses, so
-// they cannot be loaded until after the host has retrieved the board's
-// chassis and slot address.
-//
-
-@Override
-void configureExtended(IniFile pConfigFile)
-{
-
-    super.configureExtended(pConfigFile);
-
-    String section = "Control Board in Chassis "
-                                        + chassisAddr + " Slot " + slotAddr;
-
-    String positionTrackingMode = pConfigFile.readString(
-                    section, "Position Tracking Mode", "Send Clock Markers");
-
-    parsePositionTrackingMode(positionTrackingMode);
-
-    audibleAlarmController =
-              pConfigFile.readBoolean(section, "Audible Alarm Module", false);
-
-    audibleAlarmOutputChannel =
-            pConfigFile.readInt(section, "Audible Alarm Output Channel", 0);
-
-    audibleAlarmPulseDuration =
-          pConfigFile.readString(section, "Audible Alarm Pulse Duration", "1");
-
-}//end of ControlBoard::configureExtended
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::parsePositionTrackingMode
-//
-// Sets various flags based on the type of angular and linear position tracking
-// specified in the config file.
-//
-
-void parsePositionTrackingMode(String pValue)
-
-{
-
-    switch (pValue) {
-        case "Send Clock Markers":
-            rabbitControlFlags |= RABBIT_SEND_CLOCK_MARKERS;
-            break;
-        case "Send TDC Markers":
-            rabbitControlFlags |= RABBIT_SEND_TDC;
-            break;
-    }
-
-}//end of ControlBoard::parsePositionTrackingMode
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::setTrackPulsesEnabledFlag
-//
-// Sets the TRACK_PULSES_ENABLED flag in rabbitControlFlags and transmits it
-// to the remote.
-//
-
-public void setTrackPulsesEnabledFlag(boolean pState) {
-
-    if (pState){
-        rabbitControlFlags |= TRACK_PULSES_ENABLED;
-    }
-    else{
-        rabbitControlFlags &= (~TRACK_PULSES_ENABLED);
-    }
-
-    //send updated flags to the remotes
-    sendRabbitControlFlags();
-    
-}//end of ControlBoard::setTrackPulsesEnabledFlag
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::resetTrackCounters
-//
-// Sends to the remote the command to fire a Track Counter Reset pulse to
-// zero the tracking counters in the UT Boards.
-//
-
-public void resetTrackCounters()
-{
-    
-    sendBytes(RESET_TRACK_COUNTERS_CMD, (byte) (0));
-
-}//end of ControlBoard::resetTrackCounters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -371,34 +182,29 @@ public synchronized void connect()
 {
 
     if (ipAddrS == null || ipAddr == null){
-        logger.logMessage(
+        log.appendLine(
                 "Control board #" + boardIndex + " never responded to "
-                + "roll call and cannot be contacted.\n");
+                + "roll call and cannot be contacted.");
         return;
     }
 
-    logger.logMessage("Opening connection with Control board...\n");
+    log.appendLine("Opening connection with Control board...");
 
     try {
 
-        logger.logMessage("Control Board IP Address: " +
-                                                    ipAddr.toString() + "\n");
+        log.appendLine("Control Board IP Address: " + ipAddr.toString());
 
         if (!simulate) {
             socket = new Socket(ipAddr, 23);
         }
         else {
 
-            ControlSimulator controlSimulator = new ControlSimulator(
-                        ipAddr, 23, fileFormat, simulationDataSourceFilePath);
+            ControlSimulator controlSimulator = 
+                                            new ControlSimulator( ipAddr, 23);
             controlSimulator.init();
             
             socket = controlSimulator;
             
-            //when simulating, the socket is a ControlSimulator class object
-            //which is also a MessageLink implementor, so cast it for use as
-            //such so that messages can be sent to the object
-            mechSimulator = (MessageLink)socket;
         }
 
         //set amount of time in milliseconds that a read from the socket will
@@ -415,13 +221,13 @@ public synchronized void connect()
     }//try
     catch (IOException e) {
         logSevere(e.getMessage() + " - Error: 238");
-        logger.logMessage("Couldn't get I/O for " + ipAddrS + "\n");
+        log.appendLine("Couldn't get I/O for " + ipAddrS);
         return;
     }
 
     try {
         //display the greeting message sent by the remote
-        logger.logMessage(ipAddrS + " says " + in.readLine() + "\n");
+        log.appendLine(ipAddrS + " says " + in.readLine());
     }
     catch(IOException e){
         logSevere(e.getMessage() + " - Error: 248");
@@ -433,16 +239,8 @@ public synchronized void connect()
     //flag that setup was successful and board is ready for use
     ready = true;
 
-    //retrieve the board's chassis and slot addresses
-    getChassisSlotAddress();
 
-    //NOTE: now that the chassis and slot addresses are known, display messages
-    // using those to identify the board instead of the IP address so it is
-    // easier to discern which board is which.
-
-    chassisSlotAddr = chassisAddr + ":" + slotAddr;
-
-    logger.logMessage("Control " + chassisSlotAddr + " is ready." + "\n");
+    log.appendLine("Control " + ipAddrS + " is ready.");
 
     notifyAll(); //wake up all threads that are waiting for this to complete
 
@@ -458,643 +256,7 @@ public synchronized void connect()
 public void initialize()
 {
 
-    // load values from the config file which can only be loaded after the
-    // board's chassis and slot addresses are known
-
-    configureExtended(configFile);
-
-    sendRabbitControlFlags();
-
-    setEncodersDeltaTrigger();
-
 }//end of ControlBoard::initialize
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::getChassisSlotAddress
-//
-// Retrieves the board's chassis and slot address settings.
-//
-// The switches are located on the motherboard.
-//
-
-private void getChassisSlotAddress()
-{
-
-    //read the chassis and slot address from the remote
-    byte address = getRemoteData(GET_CHASSIS_SLOT_ADDRESS_CMD, true);
-
-    //parse the returned value
-    chassisAddr =  (address>>4 & 0xf);
-    slotAddr = address & 0xf;
-
-    logger.logMessage("Control " + ipAddrS + " chassis & slot address: "
-                                        + chassisAddr + "-" + slotAddr + "\n");
-
-}//end of ControlBoard::getChassisSlotAddress
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::requestAllEncoderValues
-//
-// Requests a packet from the remote with all encoder values saved at different
-// points in the inspection process.
-//
-// Note that the values will not be valid until the packet is received. If
-// any encoder value is Integer.MAX_VALUE, the packet has not been received.
-//
-
-public void requestAllEncoderValues()
-{
-
-    //set all values to max so it can be detected when they are set by 
-    //the code which processes the return packet - processAllEncoderValuesPacket
-    
-    encoderValues.setAllToMaxValue();
-    
-    //request packet; returned packet handled by processAllEncoderValuesPacket
-    sendBytes(GET_ALL_ENCODER_VALUES_CMD);
-
-}//end of ControlBoard::requestAllEncoderValues
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::processAllEncoderValuesPacket
-//
-// Parses and stores data from a GET_ALL_ENCODER_VALUES_CMD packet.
-//
-// Returns number of bytes retrieved from the socket.
-//
-
-public int processAllEncoderValuesPacket()
-{
-
-    try{
-        timeOutProcess = 0;
-        while(timeOutProcess++ < TIMEOUT){
-            
-            if (byteIn.available() >= ALL_ENCODERS_PACKET_SIZE) {break;}
-            waitSleep(10);
-        }
-        if (byteIn.available() >= ALL_ENCODERS_PACKET_SIZE) {
-            byteIn.read(allEncoderValuesBuf, 0, ALL_ENCODERS_PACKET_SIZE);
-        }
-
-    }// try
-    catch(IOException e){
-        logSevere(e.getMessage() + " - Error: 539");
-    }
-
-    int x = 0;
-
-    encoderValues.encoderPosAtOnPipeSignal = encoderValues.convertBytesToInt(
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++],
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++]);
-    
-    encoderValues.encoderPosAtOffPipeSignal = encoderValues.convertBytesToInt(
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++],
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++]);
-
-    encoderValues.encoderPosAtHead1DownSignal = encoderValues.convertBytesToInt(
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++],
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++]);
-
-    encoderValues.encoderPosAtHead1UpSignal = encoderValues.convertBytesToInt(
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++],
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++]);
-
-    encoderValues.encoderPosAtHead2DownSignal = encoderValues.convertBytesToInt(
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++],
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++]);
-
-    encoderValues.encoderPosAtHead2UpSignal = encoderValues.convertBytesToInt(
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++],
-                        allEncoderValuesBuf[x++], allEncoderValuesBuf[x++]);
-
-    return(ALL_ENCODERS_PACKET_SIZE);
-
-}//end of ControlBoard::processAllEncoderValuesPacket
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::getEncoderValuesObject
-//
-// Returns an object containing the encoder values retrieved from the remote.
-//
-
-public EncoderValues getEncoderValuesObject()
-{
-
-    return(encoderValues);
-
-}//end of ControlBoard::getEncoderValuesObject
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::startMonitor
-//
-// Places the Control board in Monitor status and displays the status of
-// various I/O as sent back from the Control board.
-//
-
-public void startMonitor()
-{
-
-    sendBytes(START_MONITOR_CMD, (byte) 0);
-
-}//end of ControlBoard::startMonitor
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::stopMonitor
-//
-// Takes the Control board out of monitor mode.
-//
-
-public void stopMonitor()
-{
-
-    sendBytes(STOP_MONITOR_CMD, (byte) 0);
-
-}//end of ControlBoard::stopMonitor
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::getMonitorPacket
-//
-// Returns in a byte array I/O status data which has already been received and
-// stored from the remote.
-// If pRequestPacket is true, then a packet is requested every so often.
-// If false, then packets are only received when the remote computer sends
-// them.
-//
-// NOTE: This function is often called from a different thread than the one
-// transferring the data from the input buffer -- erroneous values for some of
-// the multibyte values may occur due to thread collision but they are for
-// display/debugging only and an occasional glitch in the displayed values
-// should not be of major concern.
-//
-
-public byte[] getMonitorPacket(boolean pRequestPacket)
-{
-
-    if (pRequestPacket){
-        //request a packet be sent if the counter has timed out
-        //this packet will arrive in the future and be processed by another
-        //function so it can be retrieved by another call to this function
-        if (packetRequestTimer++ == 50){
-            packetRequestTimer = 0;
-            sendBytes(GET_MONITOR_PACKET_CMD, (byte) 0);
-        }
-    }
-
-    return monitorBuffer;
-
-}//end of ControlBoard::getMonitorPacket
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::processMonitorPacket
-//
-// Transfers I/O status received from the remote into an array.
-//
-// Returns number of bytes retrieved from the socket.
-//
-
-public int processMonitorPacket()
-{
-
-    try{
-        timeOutProcess = 0;
-        while(timeOutProcess++ < TIMEOUT){
-            if (byteIn.available() >= MONITOR_PACKET_SIZE) {break;}
-            waitSleep(10);
-        }
-        if (byteIn.available() >= MONITOR_PACKET_SIZE) {
-            return (byteIn.read(monitorBuffer, 0, MONITOR_PACKET_SIZE));
-        }
-
-    }// try
-    catch(IOException e){
-        logSevere(e.getMessage() + " - Error: 395");
-    }
-
-    return 0;
-
-}//end of ControlBoard::processMonitorPacket
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::requestInspectPacket
-//
-// Normally, the Control board sends Inspect packets as necessary.  This
-// function is used to force the send of an Inspect packet so that all local
-// flags and values will be updated.
-//
-// Returns number of bytes retrieved from the socket.
-//
-
-public void requestInspectPacket()
-{
-
-    sendBytes(GET_INSPECT_PACKET_CMD, (byte) 0);
-
-}//end of ControlBoard::requestInspectPacket
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::processInspectPacket
-//
-// Processes an Inspect packet from the remote with flags and encoder values.
-//
-// Returns number of bytes retrieved from the socket.
-//
-
-public int processInspectPacket()
-{
-
-    int x = 0, cnt = 0;
-    int pktSize = 12;
-
-    try{
-        timeOutProcess = 0;
-        while(timeOutProcess++ < TIMEOUT){
-            if (byteIn.available() >= pktSize) {break;}
-            waitSleep(10);
-        }
-        if (byteIn.available() >= pktSize) {
-            cnt = byteIn.read(inBuffer, 0, pktSize);
-        }
-
-        inspectPacketCount = (int)((inBuffer[x++]<<8) & 0xff00)
-                                                 + (int)(inBuffer[x++] & 0xff);
-
-        // combine four bytes each to make the encoder counts
-
-        int encoder1Count, encoder2Count;
-
-        // create integer from four bytes in buffer
-        encoder1Count = ((inBuffer[x++] << 24));
-        encoder1Count |= (inBuffer[x++] << 16) & 0x00ff0000;
-        encoder1Count |= (inBuffer[x++] << 8)  & 0x0000ff00;
-        encoder1Count |= (inBuffer[x++])       & 0x000000ff;
-
-        // create integer from four bytes in buffer
-        encoder2Count = ((inBuffer[x++] << 24));
-        encoder2Count |= (inBuffer[x++] << 16) & 0x00ff0000;
-        encoder2Count |= (inBuffer[x++] << 8)  & 0x0000ff00;
-        encoder2Count |= (inBuffer[x++])       & 0x000000ff;
-
-        //transfer to the class variables in one move -- this will be an atomic
-        //copy so it is safe for other threads to access those variables
-        encoder1 = encoder1Count; encoder2 = encoder2Count;
-
-        //flag if encoder count was increased or decreased
-        //a no change case should not occur since packets are sent when there
-        //has been a change of encoder count
-
-        if (encoder1 > prevEncoder1) {
-            encoder1Dir = InspectControlVars.INCREASING;
-        }
-        else {
-            encoder1Dir = InspectControlVars.DECREASING;
-        }
-
-        //flag if encoder count was increased or decreased
-        if (encoder2 > prevEncoder2) {
-            encoder2Dir = InspectControlVars.INCREASING;
-        }
-        else {
-            encoder2Dir = InspectControlVars.DECREASING;
-        }
-
-        //update the previous encoder values for use next time
-        prevEncoder1 = encoder1; prevEncoder2 = encoder2;
-
-        //transfer the status of the Control board input ports
-        processControlFlags = inBuffer[x++];
-        controlPortE = inBuffer[x++];
-
-        //control flags are active high
-
-        if ((processControlFlags & ON_PIPE_CTRL) != 0) {
-            onPipeFlag = true;
-        }
-        else {
-            onPipeFlag = false;
-        }
-
-        if ((processControlFlags & HEAD1_DOWN_CTRL) != 0) {
-            head1Down = true;
-        } else {
-            head1Down = false;
-        }
-
-        if ((processControlFlags & HEAD2_DOWN_CTRL) != 0) {
-            head2Down = true;
-        } else {
-            head2Down = false;
-        }
-
-        //port E inputs are active low
-
-        if ((controlPortE & TDC_MASK) == 0) {
-            tdcFlag = true;
-        } else {
-            tdcFlag = false;
-        }
-
-        if ((controlPortA & UNUSED1_MASK) == 0) {
-            unused1Flag = true;
-        } else {
-            unused1Flag = false;
-        }
-
-        if ((controlPortA & UNUSED2_MASK) == 0) {
-            unused2Flag = true;
-        } else {
-            unused2Flag = false;
-        }
-
-        if ((controlPortE & UNUSED3_MASK) == 0) {
-            unused3Flag = true;
-        } else {
-            unused3Flag = false;
-        }
-
-        newInspectPacketReady = true; //signal other objects
-
-        return(cnt);
-
-    }// try
-    catch(IOException e){
-        logSevere(e.getMessage() + " - Error: 518");
-    }
-
-    return(0);
-
-}//end of ControlBoard::processInspectPacket
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::zeroEncoderCounts
-//
-// Sends command to zero the encoder counts.
-//
-
-public void zeroEncoderCounts()
-{
-
-    sendBytes(ZERO_ENCODERS_CMD, (byte) 0);
-
-}//end of ControlBoard::zeroEncoderCounts
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::pulseOutput
-//
-// Pulses the specified output.
-//
-// NOTE: current ignores the pulse duration read from config file -- needs to
-// be fixed.
-//
-
-public void pulseOutput(int pWhichOutput)
-{
-
-    sendBytes(PULSE_OUTPUT_CMD, (byte) pWhichOutput);
-
-}//end of ControlBoard::pulseOutput
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::turnOnOutput
-//
-// Turns on the specified output.
-//
-
-public void turnOnOutput(int pWhichOutput)
-{
-
-    sendBytes(TURN_ON_OUTPUT_CMD, (byte) pWhichOutput);
-
-}//end of ControlBoard::turnOnOutput
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::turnOffOutput
-//
-// Turns off the specified output.
-//
-
-public void turnOffOutput(int pWhichOutput)
-{
-
-    sendBytes(TURN_OFF_OUTPUT_CMD, (byte) pWhichOutput);
-
-}//end of ControlBoard::turnOffOutput
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::turnOnAudibleAlarm
-//
-// Turns on the output which fires the audible alarm for one second.
-//
-
-@Override
-public void turnOnAudibleAlarm()
-{
-
-    turnOnOutput(audibleAlarmOutputChannel);
-
-}//end of ControlBoard::turnOnAudibleAlarm
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::turnOffAudibleAlarm
-//
-// Turns off the output which fires the audible alarm for one second.
-//
-
-@Override
-public void turnOffAudibleAlarm()
-{
-
-    turnOffOutput(audibleAlarmOutputChannel);
-
-}//end of ControlBoard::turnOffAudibleAlarm
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::pulseAudibleAlarm
-//
-// Pulses the output which fires the audible alarm for one second.
-//
-
-@Override
-public void pulseAudibleAlarm()
-{
-
-    pulseOutput(audibleAlarmOutputChannel);
-
-}//end of ControlBoard::pulseAudibleAlarm
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::isAudibleAlarmController
-//
-// Returns audibleAlarmController.
-//
-
-@Override
-public boolean isAudibleAlarmController()
-{
-
-    return(audibleAlarmController);
-
-}//end of ControlBoard::isAudibleAlarmController
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::setEncodersDeltaTrigger
-//
-// Tells the Control board how many encoder counts to wait before sending
-// an encoder value update.  The trigger value for each encoder is sent.
-//
-// Normally, this value will be set to something reasonable like .25 to 1.0
-// inch of travel of the piece being inspected. Should be no larger than the
-// distance represented by a single pixel.
-//
-
-public void setEncodersDeltaTrigger()
-{
-
-    sendBytes(SET_ENCODERS_DELTA_TRIGGER_CMD,
-                (byte)((encoder1DeltaTrigger >> 8) & 0xff),
-                (byte)(encoder1DeltaTrigger & 0xff),
-                (byte)((encoder2DeltaTrigger >> 8) & 0xff),
-                (byte)(encoder2DeltaTrigger & 0xff)
-                );
-
-}//end of ControlBoard::setEncodersDeltaTrigger
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Board::sendRabbitControlFlags
-//
-// Sends the rabbitControlFlags value to the remotes. These flags control
-// the functionality of the remotes.
-//
-// Note that the value of the CMD may different for each Board subclass which
-// is why each subclass calls the super method with its particular command.
-//
-
-public void sendRabbitControlFlags()
-{
-
-    super.sendRabbitControlFlags(SET_CONTROL_FLAGS_CMD);
-
-}//end of Board::sendRabbitControlFlags
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::startInspect
-//
-// Puts Control board in the inspect mode.  In this mode the Control board
-// will monitor encoder and status signals and return position information to
-// the host.
-//
-
-public void startInspect()
-{
-
-    sendBytes(START_INSPECT_CMD, (byte) 0);
-
-}//end of ControlBoard::startInspect
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::stopInspect
-//
-// Takes Control board out of the inspect mode.
-//
-
-public void stopInspect()
-{
-
-    sendBytes(STOP_INSPECT_CMD, (byte) 0);
-
-}//end of ControlBoard::stopInspect
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::prepareData
-//
-// Retrieves a data packet from the incoming data buffer and distributes it
-// to the newData variables in each gate.
-//
-// Returns true if new data is available, false if not.
-//
-
-public boolean prepareData()
-{
-
-    if (byteIn != null) {
-        try {
-
-            int c = byteIn.available();
-
-            //if a full packet is not ready, return false
-            if (c < runtimePacketSize) {return false;}
-
-            byteIn.read(inBuffer, 0, runtimePacketSize);
-
-            //wip mks - distribute the data to the gate's newData variables here
-
-        }
-        catch(EOFException eof){log.append("End of stream.\n"); return false;}
-        catch(IOException e){
-            logSevere(e.getMessage() + " - Error: 672");
-            return false;
-        }
-    }
-
-    return true;
-
-}//end of ControlBoard::prepareData
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::processDataPacketsUntilEncoderPacket
-//
-// Processes incoming data packets until an Encoder data packet has been
-// processed.
-//
-// Returns 1 if an Encoder data packet has been processed, -1 if all available
-// packets have been processed but no peak data packet was present.
-//
-// See processOneDataPacket notes for more info.
-//
-
-public int processDataPacketsUntilEncoderPacket()
-{
-
-    int x = 0;
-
-    //this flag will be set true if a Peak Data packet is processed
-    encoderDataPacketProcessed = false;
-
-    //process packets until there is no more data available or until a Peak Data
-    //packet has been processed
-
-    while ((x = processOneDataPacket(false, TIMEOUT)) > 0
-                                      && encoderDataPacketProcessed == false){}
-
-
-    if (encoderDataPacketProcessed == true) {return 1;}
-    else {return -1;}
-
-}//end of ControlBoard::processDataPacketsUntilEncoderPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -1175,17 +337,11 @@ public int processOneDataPacket(boolean pWaitForPkt, int pTimeOut)
         //store the ID of the packet (the packet type)
         pktID = inBuffer[0];
 
-        if (pktID == GET_STATUS_CMD) {return readBytes(2);}
+        if (pktID == GET_DATA_PACKET_CMD) {return readBytes(2);}
         else
-        if (pktID == GET_CHASSIS_SLOT_ADDRESS_CMD){return readBytes(2);}
-        else
-        if (pktID == GET_INSPECT_PACKET_CMD) {return processInspectPacket();}
-        else
-        if (pktID == GET_MONITOR_PACKET_CMD) {return processMonitorPacket();}
-        else
-        if (pktID == GET_ALL_ENCODER_VALUES_CMD) {
-            return processAllEncoderValuesPacket();
-        }
+        if (pktID == CUT_MODE_CMD){return readBytes(2);}
+        
+        // add more commands here
 
     }
     catch(IOException e){
@@ -1261,100 +417,118 @@ public void driveSimulation()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// ControlBoard::getInspectControlVars
-//
-// Transfers local variables related to inspection control signals and encoder
-// counts.
-//
-
-public void getInspectControlVars(InspectControlVars pICVars)
-{
-
-    pICVars.onPipeFlag = onPipeFlag;
-
-    pICVars.head1Down = head1Down;
-
-    pICVars.head2Down = head2Down;
-
-    pICVars.encoder1 = encoder1; pICVars.prevEncoder1 = prevEncoder1;
-
-    pICVars.encoder2 = encoder2; pICVars.prevEncoder2 = prevEncoder2;
-
-    pICVars.encoder1Dir = encoder1Dir;
-    pICVars.encoder2Dir = encoder2Dir;
-
-}//end of ControlBoard::getInspectControlVars
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// ControlBoard::installNewRabbitFirmware
-//
-// Transmits the Rabbit firmware image to the Control board to replace the
-// existing code.
-//
-// See corresponding function in the parent class Board.
-//
-
-public void installNewRabbitFirmware()
-{
-
-    //create an object to hold codes specific to the UT board for use by the
-    //firmware installer method
-
-    InstallFirmwareSettings settings = new InstallFirmwareSettings();
-    settings.loadFirmwareCmd = LOAD_FIRMWARE_CMD;
-    settings.noAction = NO_ACTION;
-    settings.error = ERROR;
-    settings.sendDataCmd = SEND_DATA_CMD;
-    settings.dataCmd = DATA_CMD;
-    settings.exitCmd = EXIT_CMD;
-
-    super.installNewRabbitFirmware(
-            "Control", "Rabbit\\CAPULIN CONTROL BOARD.bin", settings);
-
-}//end of ControlBoard::installNewRabbitFirmware
-//-----------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------
-// ControlBoard::xmtMessage
-//
-// This method allows an outside class to send a message and a value to this
-// class and receive a status value back.
-//
-// In this class, this is mainly used to pass messages to the ControlSimulator
-// class so that it can be controlled via messages.
-//
-
-@Override
-public int xmtMessage(int pMessage, int pValue)
-{
-
-    if (mechSimulator == null) {return MessageLink.NULL;}
-
-    //pass the message on to the mechanical simulation object
-    return mechSimulator.xmtMessage(pMessage, pValue);
-
-}//end of ControlBoard::xmtMessage
-//----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // ControlBoard::various get/set functions
 //
 
-public boolean getOnPipeFlag(){return onPipeFlag;}
-
-public boolean getInspectFlag(){return false;} //replace this???
-
-public boolean getNewInspectPacketReady(){return newInspectPacketReady;}
-
-public void setNewInspectPacketReady(boolean pValue)
-    {newInspectPacketReady = pValue;}
 
 //end of ControlBoard::various get/set functions
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// UTBoard::shutDown
+// ControlBoard::getDataPacket
+//
+// This method sends a request to the remote unit for a data packet, waits
+// for it, and then returns a reference to the data array.
+//
+
+public byte[] getDataPacket()
+{
+
+    return(null);
+    
+}//end of ControlBoard::getDataPacket
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// ControlBoard::invokeCutMode
+//
+// Sends "Cut" command to the remote.
+//
+
+public void invokeCutMode()
+{
+    
+    sendBytes(CUT_MODE_CMD, (byte) 0);
+    
+}//end of ControlBoard::invokeCutMode
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// ControlBoard::invokeStopMode
+//
+// Sends "Stop" command to the remote.
+//
+
+public void invokeStopMode()
+{
+
+    sendBytes(STOP_MODE_CMD, (byte) 0);
+
+}//end of ControlBoard::invokeStopMode
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// ControlBoard::zeroDepthCount
+//
+// Sends "Zero Depth Count" command to the remote.
+//
+
+public void zeroDepthCount()
+{
+
+    sendBytes(ZERO_DEPTH_CMD, (byte) 0);
+    
+}//end of ControlBoard::zeroDepthCount
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// ControlBoard::zeroTargetDepth
+//
+// Sends "Zero Target Depth " command to the remote.
+//
+
+public void zeroTargetDepth()
+{
+
+    sendBytes(ZERO_TARGET_DEPTH_CMD, (byte) 0);
+    
+}//end of ControlBoard::zeroDepthCount
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// ControlBoard::loadCalFile
+//
+// This loads the file used for storing calibration information such as cut
+// depth, cut speed, cut aggression, etc.
+//
+// Each child object is passed a pointer to the file so that they may load their
+// own data.
+//
+
+public void loadCalFile(model.IniFile pCalFile)
+{
+
+}//end of ControlBoard::loadCalFile
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// ControlBoard::saveCalFile
+//
+// This saves the file used for storing calibration information such as cut
+// depth, cut speed, cut aggression, etc.
+//
+// Each child object is passed a pointer to the file so that they may load their
+// own data.
+//
+
+public void saveCalFile(model.IniFile pCalFile)
+{
+
+}//end of ControlBoard::saveCalFile
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// ControlBoard::shutDown
 //
 // This function should be called before exiting the program.  Overriding the
 // "finalize" method does not work as it does not get called reliably upon

@@ -22,7 +22,7 @@
 
 package Hardware;
 
-import chart.mksystems.inifile.IniFile;
+import model.IniFile;
 import java.io.IOException;
 import java.net.*;
 import java.util.logging.Level;

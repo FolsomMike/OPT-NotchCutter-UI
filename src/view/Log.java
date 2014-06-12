@@ -33,7 +33,7 @@ import javax.swing.*;
 // This class displays a text area in a window.
 //
 
-class Log extends JDialog{
+public class Log extends JDialog{
 
     JTextArea textArea;
 
@@ -103,11 +103,9 @@ public void appendLine(String pText)
 public void appendToErrorLogFile(String pMessage)
 {
 
-    PrintWriter outputStream = null;
+    try (PrintWriter outputStream = 
+            new PrintWriter(new FileWriter("Error Log.txt", true))) {
 
-    try {
-
-        outputStream = new PrintWriter(new FileWriter("Error Log.txt", true));
 
         outputStream.println(pMessage);
 
@@ -116,11 +114,6 @@ public void appendToErrorLogFile(String pMessage)
 
         //ignore the error -- can't write it to the log file
 
-    }
-    finally {
-        if (outputStream != null) {
-            outputStream.close();
-        }
     }
 
 }//end of Log::appendToErrorLogFile
