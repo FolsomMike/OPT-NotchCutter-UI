@@ -21,7 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import javax.swing.event.ChangeEvent;
 
-public interface EventHandler {
+public interface EventProcessor {
 
     public void actionPerformed(ActionEvent e);
     

@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 // class Simulator
 //
 
-public class Simulator extends Socket{
+public class Simulator extends Socket implements Runnable{
 
 public Simulator() throws SocketException{}; //default constructor - not used
 
@@ -383,6 +383,19 @@ public int getIntFromSocket()
     return (int)((inBuffer[0]<<8) & 0xff00) + (inBuffer[1] & 0xff);
 
 }//end of Simulator::getIntFromSocket
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Simulator::run
+//
+// This is the thread run code. Should be overridden by child classes and
+// used to drive the simulation.
+//
+
+@Override
+public void run() {
+
+}//end of Simulator::run
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

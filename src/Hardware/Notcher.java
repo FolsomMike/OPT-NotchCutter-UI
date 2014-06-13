@@ -18,20 +18,23 @@
 
 package Hardware;
 
-import model.IniFile;
 import java.io.*;
 import java.net.*;
+import model.IniFile;
 import view.Log;
+import view.ThreadSafeLogger;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // class Notcher
 //
-// This class creates and handles an interface to a Notcher Unit.
+// This class creates and handles an interface to a Notcher Unit board.
 //
 
-public class Notcher extends Board{
+public class Notcher extends Remote{
 
+    int index;
+    
     byte[] monitorBuffer;
     byte[] allEncoderValuesBuf;
 
@@ -73,14 +76,13 @@ public class Notcher extends Board{
 // Notcher::Notcher (constructor)
 //
 
-public Notcher(String pBoardName, int pBoardIndex,
-  int pRuntimePacketSize, boolean pSimulate, Log pLog)
+public Notcher(int pIndex, int pRuntimePacketSize, boolean pSimulate,
+                                                       ThreadSafeLogger pTSLog)
 {
 
-    super(pLog);
+    super(pTSLog);
 
-    boardName = pBoardName;
-    boardIndex = pBoardIndex;
+    index = pIndex;
     runtimePacketSize = pRuntimePacketSize;
     simulate = pSimulate;
 
@@ -135,17 +137,17 @@ public void connect()
 {
 
     if (ipAddrS == null || ipAddr == null){
-        log.appendLine(
-                "Notcher Unit #" + boardIndex + " never responded to "
+        tsLog.appendLine(
+                "Notcher Unit #" + index + " never responded to "
                 + "roll call and cannot be contacted.");
         return;
     }
 
-    log.appendLine("Opening connection with Notcher...");
+    tsLog.appendLine("Opening connection with Notcher...");
 
     try {
 
-        log.appendLine("Notcher Unit IP Address: " + ipAddr.toString());
+        tsLog.appendLine("Notcher Unit IP Address: " + ipAddr.toString());
 
         if (!simulate) {
             socket = new Socket(ipAddr, 23);
@@ -174,13 +176,13 @@ public void connect()
     }//try
     catch (IOException e) {
         logSevere(e.getMessage() + " - Error: 238");
-        log.appendLine("Couldn't get I/O for " + ipAddrS);
+        tsLog.appendLine("Couldn't get I/O for " + ipAddrS);
         return;
     }
 
     try {
         //display the greeting message sent by the remote
-        log.appendLine(ipAddrS + " says " + in.readLine());
+        tsLog.appendLine(ipAddrS + " says " + in.readLine());
     }
     catch(IOException e){
         logSevere(e.getMessage() + " - Error: 248");
@@ -193,7 +195,7 @@ public void connect()
     ready = true;
 
 
-    log.appendLine("Notcher " + ipAddrS + " is ready.");
+    tsLog.appendLine("Notcher " + ipAddrS + " is ready.");
 
 }//end of Notcher::connect
 //-----------------------------------------------------------------------------
@@ -348,23 +350,6 @@ public void reSync()
     }
 
 }//end of Notcher::reSync
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Notcher::driveSimulation
-//
-// Drive any simulation functions if they are active.  This function is usually
-// called from a thread.
-//
-
-public void driveSimulation()
-{
-
-    if (simulate && socket != null) {
-        ((NotcherSimulator)socket).processDataPackets(false);
-    }
-
-}//end of Notcher::driveSimulation
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

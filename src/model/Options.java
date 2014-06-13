@@ -24,6 +24,9 @@
 package model;
 
 //-----------------------------------------------------------------------------
+
+import java.io.IOException;
+
 //-----------------------------------------------------------------------------
 // class Options
 //
@@ -34,6 +37,12 @@ package model;
 public class Options extends Object{
 
     public static String SOFTWARE_VERSION = "1.0";
+    
+    private int xPositionMainWindow;
+    public int getXPositionMainWindow(){return (xPositionMainWindow);}
+    
+    private int yPositionMainWindow;
+    public int getYPositionMainWindow(){return (yPositionMainWindow);}    
 
 //-----------------------------------------------------------------------------
 // Options::Options (constructor)
@@ -54,7 +63,20 @@ public Options()
 
 public void init()
 {
+    
+    IniFile generalFile = new IniFile("General Settings.ini", "UTF-8");
+    try {
+        generalFile.init();
+    } catch(IOException e) {
+        return;
+    }
+    
+    xPositionMainWindow = generalFile.readInt
+        ("General", "X Position of Main Window", Integer.MIN_VALUE);
+    yPositionMainWindow = generalFile.readInt
+        ("General", "Y Position of Main Window", Integer.MIN_VALUE);
 
+    
 }//end of Options::init
 //-----------------------------------------------------------------------------
 

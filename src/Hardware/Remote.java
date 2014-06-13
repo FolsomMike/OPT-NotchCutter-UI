@@ -1,12 +1,12 @@
 /******************************************************************************
-* Title: Board.java
-* Author: Mike Schoonover
+* Title: Remote.java
+* Author: Mike Schoonover, Hunter Schoonover
 * Date: 5/7/09
 *
 * Purpose:
 *
-* This class is the parent class for those which handle various boards via
-* Ethernet.
+* This class is the parent class for those which handle various remote devices
+* via Ethernet.
 *
 * Open Source Policy:
 *
@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.IniFile;
 import view.Log;
+import view.ThreadSafeLogger;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -49,31 +50,22 @@ class InstallFirmwareSettings extends Object{
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// class Board
+// class Remote
 //
 //
 
-public abstract class Board extends Object{
+public abstract class Remote extends Object{
 
     String simulationDataSourceFilePath = "";
     
     short rabbitControlFlags = 0;
     boolean enabled = false;
     int type;
-    int mapChannel;
-    int boardChannelForMapDataSource;
-    int headForMapDataSensor;
-    double distanceMapSensorToFrontEdgeOfHead;
-    double mapSensorDelayDistance;
-    double startFwdDelayDistance = 0;
-    double startRevDelayDistance = 0;
 
     int controlFlags = 0;
     String configFilename;
     IniFile configFile;
-    String boardName;
-    int boardIndex;
-    Log log;
+    ThreadSafeLogger tsLog;
 
     boolean setupComplete = false; //set true if set was completed
     boolean ready = false; //set true if board is successfully setup
@@ -96,19 +88,19 @@ public abstract class Board extends Object{
 
 
 //-----------------------------------------------------------------------------
-// Board::Board (constructor)
+// Remote::Remote (constructor)
 //
 
-public Board(Log pLog)
+public Remote(ThreadSafeLogger pTSLog)
 {
 
-    log = pLog;
+    tsLog = pTSLog;
 
-}//end of Board::Board (constructor)
+}//end of Remote::Remote (constructor)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::configure
+// Remote::configure
 //
 // Loads configuration settings from the configuration.ini file.
 //
@@ -117,11 +109,11 @@ void configure(IniFile pConfigFile)
 {
 
 
-}//end of Board::configure
+}//end of Remote::configure
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::sendRabbitControlFlags
+// Remote::sendRabbitControlFlags
 //
 // Sends the rabbitControlFlags value to the remotes. These flags control
 // the functionality of the remotes.
@@ -138,11 +130,11 @@ public void sendRabbitControlFlags(final byte pCommand)
                 (byte) (rabbitControlFlags & 0xff)
                 );
 
-}//end of Board::sendRabbitControlFlags
+}//end of Remote::sendRabbitControlFlags
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::isEnabled
+// Remote::isEnabled
 //
 // Returns true if the channel is enabled, false otherwise.
 //
@@ -152,11 +144,11 @@ public boolean isEnabled()
 
     return(enabled);
 
-}//end of Board::isEnabled
+}//end of Remote::isEnabled
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::setIPAddr
+// Remote::setIPAddr
 //
 // Sets the IP address for this board.
 //
@@ -168,11 +160,11 @@ public void setIPAddr(InetAddress pIPAddr)
 
     ipAddrS = pIPAddr.toString();
 
-}//end of Board::setIPAddr
+}//end of Remote::setIPAddr
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::sendBytes
+// Remote::sendBytes
 //
 // Sends a variable number of bytes (one or more) to the remote device,
 // prepending a valid header and appending the appropriate checksum.
@@ -204,11 +196,11 @@ void sendBytes(byte... pBytes)
         }
     }
 
-}//end of Board::sendBytes
+}//end of Remote::sendBytes
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::sendHeader
+// Remote::sendHeader
 //
 // Sends a valid packet header without flushing.
 //
@@ -229,11 +221,11 @@ void sendHeader()
         }
     }
 
-}//end of Board::sendHeader
+}//end of Remote::sendHeader
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::waitForNumberOfBytes
+// Remote::waitForNumberOfBytes
 //
 // Waits until pNumBytes number of data bytes are available in the socket.
 //
@@ -258,11 +250,11 @@ boolean waitForNumberOfBytes(int pNumBytes)
 
     return(false);
 
-}//end of Board::waitForNumberOfBytes
+}//end of Remote::waitForNumberOfBytes
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::readBytes
+// Remote::readBytes
 //
 // Retrieves pNumBytes number of data bytes from the packet and stores them
 // in inBuffer.
@@ -291,11 +283,11 @@ public int readBytes(int pNumBytes)
 
     return 0;
 
-}//end of Board::readBytes
+}//end of Remote::readBytes
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::getRemoteData
+// Remote::getRemoteData
 //
 // Retrieves two data bytes from the remote device, using the command specified
 // by pCommand.
@@ -325,11 +317,11 @@ byte getRemoteData(byte pCommand, boolean pForceProcessDataPackets)
 
     return inBuffer[0];
 
-}//end of Board::getRemoteData
+}//end of Remote::getRemoteData
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::getRemoteAddressedData
+// Remote::getRemoteAddressedData
 //
 // Retrieves a data byte from the remote device, using the command specified
 // by pCommand and the value pData which can be used as an address or other
@@ -364,11 +356,11 @@ byte getRemoteAddressedData(byte pCommand, byte pSendData)
 
     return inBuf[0];
 
-}//end of Board::getRemoteAddressedData
+}//end of Remote::getRemoteAddressedData
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::getRemoteDataBlock
+// Remote::getRemoteDataBlock
 //
 // Retrieves a data block from the remote device, using the command specified
 // by pCommand, a command qualifier specified by pQualifier, and the block
@@ -409,11 +401,11 @@ void getRemoteDataBlock(byte pCommand, byte pQualifier, int pSize,
 
     */
 
-}//end of Board::getRemoteDataBlock
+}//end of Remote::getRemoteDataBlock
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::processDataPackets
+// Remote::processDataPackets
 //
 // The amount of time the function is to wait for a packet is specified by
 // pTimeOut.  Each count of pTimeOut equals 10 ms.
@@ -442,11 +434,11 @@ public int processDataPackets(boolean pWaitForPkt, int pTimeOut)
 
     return x;
 
-}//end of Board::processDataPackets
+}//end of Remote::processDataPackets
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::processOneDataPacket
+// Remote::processOneDataPacket
 //
 // This function processes a single data packet if it is available.  If
 // pWaitForPkt is true, the function will wait until data is available.
@@ -460,11 +452,11 @@ public int processOneDataPacket(boolean pWaitForPkt, int pTimeOut)
 
     return(0);
 
-}//end of Board::processOneDataPacket
+}//end of Remote::processOneDataPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::waitSleep
+// Remote::waitSleep
 //
 // Sleeps for pTime milliseconds.
 //
@@ -474,11 +466,11 @@ public void waitSleep(int pTime)
 
     try {Thread.sleep(pTime);} catch (InterruptedException e) { }
 
-}//end of Board::waitSleep
+}//end of Remote::waitSleep
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::logStatus
+// Remote::logStatus
 //
 // Writes various status and error messages to the log window.
 //
@@ -486,11 +478,11 @@ public void waitSleep(int pTime)
 public void logStatus(Log pLogWindow)
 {
 
-}//end of Board::logStatus
+}//end of Remote::logStatus
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::logSevere
+// Remote::logSevere
 //
 // Logs pMessage with level SEVERE using the Java logger.
 //
@@ -500,11 +492,11 @@ void logSevere(String pMessage)
 
     Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage);
 
-}//end of Board::logSevere
+}//end of Remote::logSevere
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Board::logStackTrace
+// Remote::logStackTrace
 //
 // Logs stack trace info for exception pE with pMessage at level SEVERE using
 // the Java logger.
@@ -515,9 +507,9 @@ void logStackTrace(String pMessage, Exception pE)
 
     Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage, pE);
 
-}//end of Board::logStackTrace
+}//end of Remote::logStackTrace
 //-----------------------------------------------------------------------------
 
-}//end of class Board
+}//end of class Remote
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

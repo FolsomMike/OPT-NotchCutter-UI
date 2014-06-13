@@ -8,8 +8,16 @@
 * This class simulates a UDP connection between the host and the remote
 * devices (Control Boards, UT Boards, etc.)
 *
-* This is a subclass of DatagramPacket and can be substituted for an instance
+* This is a subclass of MulticastSocket and can be substituted for an instance
 * of that class when simulated data is needed.
+* 
+* This class uses a crude method to simulate the socket...it overrides the
+* MulticastSocket.receive method and simply returns a data packet when the
+* main program calls that method to receive data.
+* 
+* The Ethernet socket simulator used by the Simulator class is a more robust
+* simulation and actually reads and writes data to the underlying sockets
+* to communicate with the main program.
 *
 * Open Source Policy:
 *
@@ -38,27 +46,31 @@ import java.util.logging.Logger;
 
 public class UDPSimulator extends MulticastSocket{
 
-public UDPSimulator() throws SocketException, IOException{}; //default constructor - not used
-
     int port;
 
+    int numUnitsToSimulate;
+    
     int responseCount = 0;
 
     String announcement;
 
     IniFile configFile;
 
+//default constructor - not used    
+public UDPSimulator() throws SocketException, IOException{};
+
+
 //-----------------------------------------------------------------------------
 // UDPSimulator::UDPSimulator (constructor)
 //
 
-public UDPSimulator(int pPort, String pAnnouncement)
+public UDPSimulator(int pPort, String pAnnouncement, int pNumUnitsToSimulate)
         throws SocketException, IOException
 {
 
     super(pPort);
 
-    port = pPort;
+    port = pPort; numUnitsToSimulate = pNumUnitsToSimulate;
 
     announcement = pAnnouncement;
 
@@ -82,14 +94,23 @@ public void send(DatagramPacket p)
 //
 // This method gets triggered when the program sends a UDP packet.
 //
+// See notes in header regarding the methods used in this class compared to
+// the socket simulator in the Simulator class.
+//
 
 @Override
-public void receive(DatagramPacket p)
+public void receive(DatagramPacket p) throws IOException
 {
 
+    //if specified number of units have responded, throw an exception to
+    //simulate a timeout
+    if(responseCount >= numUnitsToSimulate){
+        throw(new IOException());
+    }
+    
     p.setData(announcement.getBytes());
 
-    //each simulated UT board sends a response packet which will have its IP
+    //each simulated unit sends a response packet which will have its IP
     //address - for each instance of this class created, use the next sequential
     //IP address
 
