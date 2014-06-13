@@ -32,7 +32,6 @@
 
 package view;
 
-import view.Log;
 import java.io.*;
 import java.util.Date;
 import javax.swing.*;
@@ -64,9 +63,21 @@ public ThreadSafeLogger(JTextArea pLog)
 
     log = pLog;
 
-    messages = new String[MESSAGE_BUFFER_SIZE];
-
 }//end of ThreadSafeLogger::ThreadSafeLogger (constructor)
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// ThreadSafeLogger::init
+//
+// Initializes new objects. Should be called immediately after instantiation.
+//
+
+public void init()
+{
+
+    messages = new String[MESSAGE_BUFFER_SIZE];    
+    
+}//end of ThreadSafeLogger::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -229,7 +240,7 @@ public void saveToFileThreadSafe()
 
         file.println(log.getText().replace("\n", lineSeparator));
 
-        if (file != null) {file.close();}
+        file.close();
 
     }
     catch(IOException e){
@@ -301,7 +312,18 @@ public void appendLine(String pText)
 public void appendToErrorLogFile(String pMessage)
 {
 
-    appendToErrorLogFile(pMessage);
+    try (PrintWriter outputStream = 
+            new PrintWriter(new FileWriter("Error Log.txt", true))) {
+
+
+        outputStream.println(pMessage);
+
+    }
+    catch(IOException e){
+
+        //ignore the error -- can't write it to the log file
+
+    }
 
 }//end of ThreadSafeLogger::appendToErrorLogFile
 //-----------------------------------------------------------------------------

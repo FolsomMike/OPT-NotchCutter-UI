@@ -34,10 +34,10 @@ import view.View;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// class NotcherController
+// class NotcherEventHandler
 //
 
-public class NotcherController implements EventHandler, Runnable
+public class NotcherEventHandler implements EventProcessor, Runnable
 {
 
     private ADataClass aDataClass;
@@ -75,20 +75,20 @@ public class NotcherController implements EventHandler, Runnable
     private final JFileChooser fileChooser = new JFileChooser();
 
 //-----------------------------------------------------------------------------
-// NotcherController::NotcherController (constructor)
+// NotcherEventHandler::NotcherEventHandler (constructor)
 //
 
-public NotcherController(View pView, int pIndexNmber)
+public NotcherEventHandler(View pView, int pIndexNmber)
 {
 
     view = pView;
     indexNumber = pIndexNmber;
     
-}//end of NotcherController::NotcherController (constructor)
+}//end of NotcherEventHandler::NotcherEventHandler (constructor)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::init
+// NotcherEventHandler::init
 //
 // Initializes the object.  Must be called immediately after instantiation.
 //
@@ -107,11 +107,11 @@ public void init()
     
     notcherUI = createNotcherUI();
 
-}// end of NotcherController::init
+}// end of NotcherEventHandler::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::createNotcherUI
+// NotcherEventHandler::createNotcherUI
 //
 // Creates a notcher UI and passes this as an event handler.
 //
@@ -121,18 +121,18 @@ public NotcherUI createNotcherUI()
     
     return (view.createNotcherUI(this, indexNumber));
 
-}// end of NotcherController::createNotcherUI
+}// end of NotcherEventHandler::createNotcherUI
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::actionPerformed
+// NotcherEventHandler::actionPerformed
 //
 // Responds to events.
 //
 // This is identical to the method employed by  ActionListener objects. This
 // object is not an ActionListener, but uses the same concept for clarity. The
 // "NotcherUI" objects catch GUI events and call this method to pass
-// those events to this "NotcherController" object.
+// those events to this "NotcherEventHandler" object.
 //
 
 @Override
@@ -175,7 +175,7 @@ public void actionPerformed(ActionEvent e)
         notcherUI.disposeChangeNameDialog();
     }
 
-}//end of NotcherController::actionPerformed
+}//end of NotcherEventHandler::actionPerformed
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -251,7 +251,7 @@ public void stateChanged(ChangeEvent ce)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::loadDataFromFile
+// NotcherEventHandler::loadDataFromFile
 //
 // Loads data from a file.
 //
@@ -263,11 +263,11 @@ public void loadDataFromFile()
 
     //notcherUI.updateGUIDataSet1();//hss wip
     
-}//end of NotcherController::loadDataFromFile
+}//end of NotcherEventHandler::loadDataFromFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::saveDataToFile
+// NotcherEventHandler::saveDataToFile
 //
 // Saves data to a file.
 //
@@ -279,11 +279,11 @@ public void saveDataToFile()
 
     aDataClass.saveToTextFile();
 
-}//end of NotcherController::saveDataToFile
+}//end of NotcherEventHandler::saveDataToFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::doTimerActions
+// NotcherEventHandler::doTimerActions
 //
 // Performs actions driven by the timer.
 //
@@ -293,11 +293,11 @@ public void saveDataToFile()
 public void doTimerActions()
 {
     
-}//end of NotcherController::doTimerActions
+}//end of NotcherEventHandler::doTimerActions
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::doSimulationTimerActions
+// NotcherEventHandler::doSimulationTimerActions
 //
 // Performs simulation actions driven by the timer.
 //
@@ -307,11 +307,11 @@ public void doSimulationTimerActions()
 
     simulateVoltageAndCurrentLevels();
     
-}//end of NotcherController::doSimulationTimerActions
+}//end of NotcherEventHandler::doSimulationTimerActions
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::simulateVoltageAndCurrentLevels
+// NotcherEventHandler::simulateVoltageAndCurrentLevels
 //
 // Simulates values for the voltage and current levels.
 // 
@@ -363,11 +363,11 @@ public void simulateVoltageAndCurrentLevels()
     
     notcherUI.currentLeds.repaint();
 
-}// end of NotcherController::simulateVoltageAndCurrentLevels
+}// end of NotcherEventHandler::simulateVoltageAndCurrentLevels
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::displayAbout
+// NotcherEventHandler::displayAbout
 //
 // Displays about information.
 //
@@ -377,22 +377,22 @@ private void displayAbout()
 
     view.displayAbout();
 
-}//end of NotcherController::displayAbout
+}//end of NotcherEventHandler::displayAbout
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::doSomething1
+// NotcherEventHandler::doSomething1
 //
 
 private void doSomething1()
 {
 
 
-}//end of NotcherController::doSomething1
+}//end of NotcherEventHandler::doSomething1
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::doSomethingInWorkerThread
+// NotcherEventHandler::doSomethingInWorkerThread
 //
 // Does nothing right now -- modify it to call a function which takes a long
 // time to finish. It will be run in a background thread so the GUI is still
@@ -460,22 +460,22 @@ private void doSomethingInWorkerThread()
     };//end of class SwingWorker
     //----------------------------------------------------------------------
 
-}//end of NotcherController::doSomethingInWorkerThread
+}//end of NotcherEventHandler::doSomethingInWorkerThread
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::doSomething2
+// NotcherEventHandler::doSomething2
 //
 
 private void doSomething2()
 {
 
 
-}//end of NotcherController::doSomething2
+}//end of NotcherEventHandler::doSomething2
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::run
+// NotcherEventHandler::run
 //
 // This is the part which runs as a separate thread.  The actions of accessing
 // remote devices occur here.  If they are done in a timer call instead, then
@@ -500,11 +500,11 @@ public void run()
 
     }
 
-}//end of NotcherController::run
+}//end of NotcherEventHandler::run
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::threadSleep
+// NotcherEventHandler::threadSleep
 //
 // Calls the Thread.sleep function. Placed in a function to avoid the
 // "Thread.sleep called in a loop" warning -- yeah, it's cheezy.
@@ -515,11 +515,11 @@ public void threadSleep(int pSleepTime)
 
     try {Thread.sleep(pSleepTime);} catch (InterruptedException e) { }
 
-}//end of NotcherController::threadSleep
+}//end of NotcherEventHandler::threadSleep
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::control
+// NotcherEventHandler::control
 //
 // Performs all display and control.  Call this from a thread.
 //
@@ -533,11 +533,11 @@ public void control()
         //call function to update stuff here
     }
 
-}//end of NotcherController::control
+}//end of NotcherEventHandler::control
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::displayErrorMessage
+// NotcherEventHandler::displayErrorMessage
 //
 // Displays an error dialog with message pMessage.
 //
@@ -547,11 +547,11 @@ public void displayErrorMessage(String pMessage)
 
     view.displayErrorMessage(pMessage);
 
-}//end of NotcherController::displayErrorMessage
+}//end of NotcherEventHandler::displayErrorMessage
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::shutDown
+// NotcherEventHandler::shutDown
 //
 // Disables chassis power and performs any other appropriate shut down
 // operations.
@@ -565,19 +565,19 @@ public void shutDown()
 
     shutDown = true;
 
-}//end of NotcherController::shutDown
+}//end of NotcherEventHandler::shutDown
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherController::(various window listener functions)
+// NotcherEventHandler::(various window listener functions)
 //
 // These functions are implemented per requirements of interface Event Handler,
 // which includes WindowListener functions, but do nothing at the present time.  
 // As code is added to each function, it should be moved from this section and 
 // formatted properly.
 //
-// Although NotcherController has no windows to control, the WindowListener
-// functions are still required because they are a part of the EventHandler
+// Although NotcherEventHandler has no windows to control, the WindowListener
+// functions are still required because they are a part of the EventProcessor
 // interface.
 //
 
@@ -596,9 +596,9 @@ public void windowIconified(WindowEvent e){}
 @Override
 public void windowDeiconified(WindowEvent e){}
 
-//end of NotcherController::(various window listener functions)
+//end of NotcherEventHandler::(various window listener functions)
 //-----------------------------------------------------------------------------
 
-}//end of class NotcherController
+}//end of class NotcherEventHandler
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

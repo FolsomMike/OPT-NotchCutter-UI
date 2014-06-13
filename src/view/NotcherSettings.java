@@ -16,7 +16,8 @@ package view;
 
 //-----------------------------------------------------------------------------
 
-import controller.EventHandler;
+
+import controller.EventProcessor;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -44,7 +45,7 @@ import toolkit.Tools;
 
 public class NotcherSettings extends JDialog {
     
-    private final EventHandler eventHandler;
+    private final EventProcessor eventHandler;
     private final WindowListener windowListener;
     private final ActionListener actionListener;
     
@@ -76,7 +77,7 @@ public class NotcherSettings extends JDialog {
 //
 
 public NotcherSettings(String pNotcherName, JFrame pParentFrame, 
-                        EventHandler pEventHandler, 
+                        EventProcessor pEventHandler, 
                         WindowListener pWindowListener, 
                         ActionListener pActionListener) {
     

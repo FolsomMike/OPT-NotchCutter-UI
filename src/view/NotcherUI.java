@@ -19,7 +19,8 @@ package view;
 
 //-----------------------------------------------------------------------------
 
-import controller.EventHandler;
+
+import controller.EventProcessor;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
@@ -54,7 +55,7 @@ import toolkit.Tools;
 public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
         WindowListener {
     
-    private final EventHandler eventHandler;
+    private final EventProcessor eventHandler;
     private final JFrame mainFrame;
     
     private NotcherSettings notcherSettings;
@@ -88,7 +89,7 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
 //
 
 public NotcherUI(int pWidth, int pHeight, int pIndexNumber, JFrame pMainFrame,
-                    EventHandler pEventHandler)
+                    EventProcessor pEventHandler)
 {
     
     width = pWidth;

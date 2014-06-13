@@ -6,12 +6,12 @@
 * Purpose:
 *
 * This class handles the Notcher communications.
-*
 * 
-*
-* wip hss --
+* It opens a UDP socket and broadcasts a greeting to all devices on the
+* network. The devices which answer are added to a list.
 * 
-* wip hss end
+* An Ethernet socket is then opened to establish a link to all devices in the
+* list.
 * 
 * Open Source Policy:
 *
@@ -29,9 +29,9 @@ import java.net.*;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.*;
 import model.IniFile;
 import view.Log;
+import view.ThreadSafeLogger;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -44,14 +44,18 @@ public class NotcherHandler extends Object{
 
     boolean controlBoardsReady = false;
 
-    boolean simulateControlBoards;
+    boolean simulateNotchers;
+
+    private static final int MAX_NUM_NOTCHERS = 10;
     
-    Notcher[] controlBoards;
-    int numberOfControlBoards;
+    private int numberOfNotchers = 0;
+    public int getNumberOfNotchers() {return (numberOfNotchers); }
+    
+    Notcher[] notchers;
 
     boolean logEnabled = true;
 
-    Log log;
+    ThreadSafeLogger tsLog;
 
     static int RUNTIME_PACKET_SIZE = 50;
 
@@ -69,11 +73,11 @@ public class NotcherHandler extends Object{
 // should already be opened and ready to access.
 //
 
-public NotcherHandler(Log pLog)
+public NotcherHandler(ThreadSafeLogger pTSLog)
 
 {
 
-    log = pLog;
+    tsLog = pTSLog;
 
 }//end of NotcherHandler::NotcherHandler (constructor)
 //-----------------------------------------------------------------------------
@@ -89,30 +93,51 @@ public void init()
 
     pktBuffer = new byte[RUNTIME_PACKET_SIZE];
 
+    configure(); //load settings from config file
+    
 }//end of NotcherHandler::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // NotcherHandler::configure
 //
-// Loads configuration settings from the configuration.ini file.  These set
-// the number and style of channels, gates, etc.
+// Loads configuration settings from the ini file.
+
 // The various child objects are then created as specified by the config data.
 //
 
-private void configure(IniFile pConfigFile)
+private void configure()
 {
 
-    simulateControlBoards =
-       pConfigFile.readBoolean("Hardware", "Simulate Control Boards", false);
+    IniFile configFile = new IniFile("General Settings.ini", "UTF-8");
+    try {
+        configFile.init();
+    } catch(IOException e) {
+        return;
+    }
     
-    numberOfControlBoards =
-                 pConfigFile.readInt("Hardware", "Number of Control Boards", 1);
-    
+    simulateNotchers =
+       configFile.readBoolean("Hardware", "Simulate Notchers", false);
+
     //create and setup the Control boards
-    configureControlBoards();
+    configureNotchers();
 
 }//end of NotcherHandler::configure
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::configureNotchers
+//
+// Loads configuration settings from the configuration.ini file relating to
+// the Notchers and creates/sets them up.
+//
+
+private void configureNotchers()
+{
+
+    notchers = new Notcher[MAX_NUM_NOTCHERS];
+    
+}//end of NotcherHandler::configureNotchers
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -153,161 +178,234 @@ public void connect()
 
     iFace = findNetworkInterface();
 
-    connectControlBoards(iFace);
+    connectNotchers(iFace);
 
 }//end of NotcherHandler::connect
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::connectControlBoards
+// NotcherHandler::connectNotchers
 //
-// Opens a TCP/IP connection with the Control Board.
+// Opens a TCP/IP connection with the Notchers.
 //
-// To find the boards, first makes a UDP connection via the network interface
+// To find the units, first makes a UDP connection via the network interface
 // pNetworkInterface. If there are multiple interfaces in the system, such as
 // an Internet connection, the UDP broadcasts will fail unless tied to the
 // interface connected to the remotes.
 //
 
-public void connectControlBoards(NetworkInterface pNetworkInterface)
+@SuppressWarnings("ConvertToTryWithResources")
+private void connectNotchers(NetworkInterface pNetworkInterface)
 {
 
-    log.appendLine("Broadcasting greeting to all Control boards...");
+    tsLog.appendLine("Broadcasting greeting to all Notchers...");
 
-    MulticastSocket socket;
-
-    try{
-        if (!simulateControlBoards) {
-            socket = new MulticastSocket(4445);
-            if (pNetworkInterface != null) {
-                try{
-                    socket.setNetworkInterface(pNetworkInterface);
-                }catch (SocketException e) {}//let system bind to default interface
-            }
-        }
-        else {socket = new UDPSimulator(4445, "Control Board present...");}
-
-    }
-    catch (IOException e) {
-        logSevere(e.getMessage() + " - Error: 204");
-        log.appendLine("Couldn't create Control broadcast socket.");
-        return;
-    }
-
+    //open socket
+    MulticastSocket socket = openUDPBroadcastSocket(pNetworkInterface);
+    if (socket == null) return;
+    
+    //set up socket and "Roll Call" datagram packet
+    DatagramPacket outPacket = null;
+    if (!setupSocketAndRollCallPacket(socket, outPacket)){ return; }
+    
     int loopCount = 0;
-    String castMsg = "Control Board Roll Call";
-    byte[] outBuf;
-    outBuf = castMsg.getBytes();
-    InetAddress group;
-    DatagramPacket outPacket;
     byte[] inBuf = new byte[256];
     DatagramPacket inPacket;
     inPacket = new DatagramPacket(inBuf, inBuf.length);
     int responseCount = 0;
-    String response;
+    
+    //broadcast the roll call greeting several times
+    while(loopCount++ < 5 && responseCount < MAX_NUM_NOTCHERS){
+
+        responseCount = sendRollCallAndProcessResponders(
+                                   socket, outPacket, inPacket, responseCount);
+        
+    }// while(loopCount...
+
+    socket.close();
+
+    numberOfNotchers = responseCount;
+    
+    //bail out if no boards responded
+    if (numberOfNotchers == 0) {return;}
+
+    // allow each unit to connect to the remote
+
+    for (int i = 0; i < numberOfNotchers; i++){
+        if(notchers[i] != null) { notchers[i].connect(); }
+    }
+
+    tsLog.appendLine("\nAll Notchers ready.\n");
+
+    //initialize each Control board
+    initializeNotchers();
+
+}//end of NotcherHandler::connectNotchers
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler:openUDPBroadcastSocket
+//
+// Opens a UPD broadcast socket for sending queries to the remote units.
+//
+// Returns the socket if successful.
+// Returns null on failure.
+//
+
+private MulticastSocket openUDPBroadcastSocket(
+                                            NetworkInterface pNetworkInterface)
+{
+
+    MulticastSocket socket;
+    
+    try{
+        if (!simulateNotchers) {
+            socket = new MulticastSocket(4445);
+            if (pNetworkInterface != null) {
+                try{
+                    socket.setNetworkInterface(pNetworkInterface);
+                }catch (SocketException e) {return(null);}
+            }
+        }
+        else {socket = new UDPSimulator(4445, "Notcher present...", 4);}
+
+    }
+    catch (IOException e) {
+        logSevere(e.getMessage() + " - Error: 352");
+        tsLog.appendLine("Couldn't create Notcher broadcast socket.");
+        return(null);
+    }
+    
+    return(socket);
+    
+}//end of NotcherHandler::openUDPBroadcastSocket
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::setupSocketAndRollCallPacket
+//
+// Sets up a MulticastSocket and datagram packet for use.
+//
+// Returns true on success.
+// Returns false on failure.
+//
+
+private boolean setupSocketAndRollCallPacket(MulticastSocket pSocket,
+                                                    DatagramPacket pOutPacket)
+{
+
+    String castMsg = "Notcher Roll Call";
+    byte[] outBuf;
+    outBuf = castMsg.getBytes();
+    InetAddress group;
 
     try{
         group = InetAddress.getByName("230.0.0.1");
     }
     catch (UnknownHostException e){
         logSevere(e.getMessage() + " - Error: 224");
-        socket.close();
-        return;
+        pSocket.close();
+        return(false);
     }
 
-    outPacket = new DatagramPacket(outBuf, outBuf.length, group, 4446);
+    pOutPacket = new DatagramPacket(outBuf, outBuf.length, group, 4446);
 
     //force socket.receive to return if no packet available within 1 millisec
     try{
-        socket.setSoTimeout(1000);
+        pSocket.setSoTimeout(1000);
     }
     catch(SocketException e){
         logSevere(e.getMessage() + " - Error: 236");
+        return(false);
+    }
+        
+    return(true);
+    
+}//end of NotcherHandler::setupSocketAndRollCallPacket
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::sendRollCallAndProcessResponders
+//
+// Sets up a MulticastSocket and datagram packet for use.
+//
+// Adds number of responding units to pResponseCount and returns the new value.
+// Returns -1 on error.
+//
+
+private int sendRollCallAndProcessResponders(MulticastSocket pSocket,
+       DatagramPacket pOutPacket, DatagramPacket pInPacket, int pResponseCount)
+{
+    
+    String response;    
+    int responseCount = pResponseCount;
+    
+    try {pSocket.send(pOutPacket);}
+    catch(IOException e) {
+        logSevere(e.getMessage() + " - Error: 245");
+        pSocket.close();
+        return(-1);
     }
 
-    //broadcast the roll call greeting several times - bail out when expected
-    //number of different Control boards have responded
-    while(loopCount++ < 5 && responseCount < numberOfControlBoards){
+    waitSleep(1000); //sleep to delay between broadcasts
 
-        try {socket.send(outPacket);}
-        catch(IOException e) {
-            logSevere(e.getMessage() + " - Error: 245");
-            socket.close();
-            return;
-        }
+    //check for response packets from the remotes
+    try{
+        //read response packets until a timeout error exception occurs or
+        //until max number of units have responded
+        while(responseCount < MAX_NUM_NOTCHERS){
 
-        waitSleep(1000); //sleep to delay between broadcasts
+            pSocket.receive(pInPacket);
 
-        //check for response packets from the remotes
-        try{
-            //read response packets until a timeout error exception occurs or
-            //until expected number of different Control boards have responded
-            while(responseCount < numberOfControlBoards){
+            //store each new ip address in a Control board object
+            for (int i = 0; i < MAX_NUM_NOTCHERS; i++){
 
-                socket.receive(inPacket);
+                //if a ut board already has the same ip, don't save it
+                //this might occur if a board responds more than once as the
+                //host repeatedly broadcasts the greeting
+                //since the first utBoard objects in the array are filled
+                //first -- this will catch duplicates
 
-                //store each new ip address in a Control board object
-                for (int i = 0; i < numberOfControlBoards; i++){
+                if (notchers[i] != null && notchers[i].ipAddr != null &&
+                        notchers[i].ipAddr == pInPacket.getAddress()){
+                    break;
+                }
 
-                    //if a ut board already has the same ip, don't save it
-                    //this might occur if a board responds more than once as the
-                    //host repeatedly broadcasts the greeting
-                    //since the first utBoard objects in the array are filled
-                    //first -- this will catch duplicates
+                //only boards which haven't been already seen make it here
 
-                    if (controlBoards[i].ipAddr != null &&
-                            controlBoards[i].ipAddr == inPacket.getAddress()){
-                        break;
-                    }
+                //if an empty reached, store new unit there
+                if (notchers[i] == null){
 
-                    //only boards which haven't been already seen make it here
+                    notchers[i] = new Notcher(i,
+                            RUNTIME_PACKET_SIZE, simulateNotchers, tsLog);
+                    notchers[i].init();
 
-                    //if an unused board reached, store ip there
-                    if (controlBoards[i].ipAddr == null){
+                    //store the ip address in the unused object
+                    notchers[i].setIPAddr(pInPacket.getAddress());
 
-                        //store the ip address in the unused object
-                        controlBoards[i].setIPAddr(inPacket.getAddress());
+                    //count unique IP address responses
+                    responseCount++;
 
-                        //count unique IP address responses
-                        responseCount++;
+                    //convert the response packet to a string
+                    response = new String(
+                            pInPacket.getData(), 0, pInPacket.getLength());
 
-                        //convert the response packet to a string
-                        response = new String(
-                                inPacket.getData(), 0, inPacket.getLength());
+                    //display the greeting string from the remote
+                    tsLog.appendLine(
+                                    notchers[i].ipAddrS + "  " + response);
 
-                        //display the greeting string from the remote
-                        log.appendLine(
-                             controlBoards[i].ipAddrS + "  " + response);
+                    break;
+                }
+            }//for (int i = 0; i < numberOfControlBoards; i++)
+        }//while(true)
+    }//try
+    catch(IOException e){
+        //this reached if receive times out -- take no action
+    }    
 
-                        break;
-                    }
-                }//for (int i = 0; i < numberOfControlBoards; i++)
-            }//while(true)
-        }//try
-        catch(IOException e){
-            //this reached if receive times out -- take no action
-        }
-    }// while(loopCount...
-
-    socket.close();
-
-    //bail out if no boards responded
-    if (responseCount == 0) {return;}
-
-    // allow each unit to connect to the remote
-
-    if (responseCount > 0){
-        for (int i = 0; i < numberOfControlBoards; i++){
-            controlBoards[i].connect();
-        }
-    }//if (responseCount > 0)
-
-    log.appendLine("All Control boards ready.");
-
-    //initialize each Control board
-    initializeControlBoards();
-
-}//end of NotcherHandler::connectControlBoards
+    return(responseCount);
+    
+}//end of NotcherHandler::sendRollCallAndProcessResponders
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -335,41 +433,41 @@ public void connectControlBoards(NetworkInterface pNetworkInterface)
 // an Internet connection), it can cause the UDP broadcasts to fail.
 //
 
-public NetworkInterface findNetworkInterface()
+private NetworkInterface findNetworkInterface()
 {
 
-    log.appendLine("");
+    tsLog.appendLine("");
 
     NetworkInterface iFace = null;
 
     try{
-        log.appendLine("Full list of Network Interfaces:" + "\n");
+        tsLog.appendLine("Full list of Network Interfaces:");
         for (Enumeration<NetworkInterface> en =
               NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
 
             NetworkInterface intf = en.nextElement();
-            log.appendLine("    " + intf.getName() + " " +
-                                                intf.getDisplayName() + "\n");
+            tsLog.appendLine("    " + intf.getName() + " " +
+                                                intf.getDisplayName());
 
             for (Enumeration<InetAddress> enumIpAddr =
                      intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
 
                 String ipAddr = enumIpAddr.nextElement().toString();
 
-                log.appendLine("        " + ipAddr + "\n");
+                tsLog.appendLine("        " + ipAddr);
 
                 if(ipAddr.startsWith("/169.254")){
                     iFace = intf;
-                    log.appendLine("==>> Binding to above adapter...\n");
+                    tsLog.appendLine("==>> Binding to above adapter...");
                 }
             }
         }
     }
     catch (SocketException e) {
-        log.appendLine(" (error retrieving network interface list)");
+        tsLog.appendLine(" (error retrieving network interface list)");
     }
 
-    log.appendLine("");
+    tsLog.appendLine("");
     
     return(iFace);
 
@@ -377,39 +475,19 @@ public NetworkInterface findNetworkInterface()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::initializeControlBoards
+// NotcherHandler::initializeNotchers
 //
-// Sets up each Control board with various settings.
+// Sets up each Notcher with various settings.
 //
 
-public void initializeControlBoards()
+private void initializeNotchers()
 {
 
-    for (int i = 0; i < numberOfControlBoards; i++) {
-
-        if (controlBoards[i] != null) { controlBoards[i].initialize(); }
+    for (int i = 0; i < numberOfNotchers; i++) {
+        if (notchers[i] != null) { notchers[i].initialize(); }
     }
 
-}//end of NotcherHandler::initializeControlBoards
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// NotcherHandler::driveSimulation
-//
-// Drive any simulation functions if they are active.  This function is usually
-// called from a thread.
-//
-
-public void driveSimulation()
-{
-
-    if (simulateControlBoards) {
-        for (int i = 0; i < numberOfControlBoards; i++) {
-            controlBoards[i].driveSimulation();
-        }
-    }
-
-}//end of NotcherHandler::driveSimulation
+}//end of NotcherHandler::initializeNotchers
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -418,7 +496,7 @@ public void driveSimulation()
 // Writes various status and error messages to the log window.
 //
 
-public void logStatus(Log pLogWindow)
+private void logStatus(Log pLogWindow)
 {
 
 }//end of NotcherHandler::logStatus
@@ -435,10 +513,8 @@ public void logStatus(Log pLogWindow)
 public void shutDown()
 {
 
-    for (int i = 0; i < numberOfControlBoards; i++) {
-        if (controlBoards[i]!= null) {
-            controlBoards[i].shutDown();
-        }
+    for (int i = 0; i < numberOfNotchers; i++) {
+        if (notchers[i]!= null) { notchers[i].shutDown(); }
     }
 
 }//end of NotcherHandler::shutDown
@@ -454,7 +530,7 @@ public void shutDown()
 // own data.
 //
 
-public void loadCalFile(IniFile pCalFile)
+private void loadCalFile(IniFile pCalFile)
 {
 
     // load any settings which apply to all Notchers here
@@ -464,8 +540,8 @@ public void loadCalFile(IniFile pCalFile)
     
     // call each Notcher to load its own data
     
-    for (int i = 0; i < numberOfControlBoards; i++) {
-        controlBoards[i].loadCalFile(pCalFile);
+    for (int i = 0; i < numberOfNotchers; i++) {
+        notchers[i].loadCalFile(pCalFile);
     }
 
 }//end of NotcherHandler::loadCalFile
@@ -481,7 +557,7 @@ public void loadCalFile(IniFile pCalFile)
 // own data.
 //
 
-public void saveCalFile(IniFile pCalFile)
+private void saveCalFile(IniFile pCalFile)
 {
 
     // load any settings which apply to all Notchers here
@@ -490,8 +566,8 @@ public void saveCalFile(IniFile pCalFile)
         
     // call each Notcher to save its data
     
-    for (int i = 0; i < numberOfControlBoards; i++) {
-        controlBoards[i].saveCalFile(pCalFile);
+    for (int i = 0; i < numberOfNotchers; i++) {
+        notchers[i].saveCalFile(pCalFile);
     }
 
 }//end of NotcherHandler::saveCalFile
@@ -506,7 +582,7 @@ public void saveCalFile(IniFile pCalFile)
 // Java thread, use threadSafeLog instead.
 //
 
-public void displayMessages()
+private void displayMessages()
 {
 
 }//end of NotcherHandler::displayMessages
@@ -521,7 +597,7 @@ public void displayMessages()
 // is necessary to display status messages along the way.
 //
 
-public void doTasks()
+private void doTasks()
 {
 
     displayMessages();
@@ -622,38 +698,6 @@ public void zeroDepthCount(String pIP)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::configureControlBoards
-//
-// Loads configuration settings from the configuration.ini file relating to
-// the boards and creates/sets them up.
-//
-
-private void configureControlBoards()
-{
-
-    //create an array of boards per the config file setting
-    if (numberOfControlBoards > 0){
-
-        controlBoards = new Notcher[numberOfControlBoards];
-
-        //pass the config filename instead of the configFile already opened
-        //because the UTBoards have to create their own iniFile objects to read
-        //the config file because they each have threads and iniFile is not
-        //threadsafe
-
-        for (int i = 0; i < numberOfControlBoards; i++) {
-            controlBoards[i] = new Notcher("Control " + (i+1),
-                    i, RUNTIME_PACKET_SIZE, simulateControlBoards, log);
-            controlBoards[i].init();
-
-        }
-
-    }//if (numberOfControlBoards > 0)
-    
-}//end of NotcherHandler::configureControlBoards
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // NotcherHandler::findUnitByIP
 //
 // Finds the Notcher object in the array which has IP address of pIP.
@@ -661,13 +705,13 @@ private void configureControlBoards()
 // Returns reference to the notcher or null if no match found.
 //
 
-Notcher findUnitByIP(String pIP)
+public Notcher findUnitByIP(String pIP)
 {
     
-    for (int i = 0; i < numberOfControlBoards; i++) {
-        if (controlBoards[i] != null && controlBoards[i].ready) {
-            if (pIP.equals(controlBoards[i].ipAddrS)) {
-                return (controlBoards[i]);
+    for (int i = 0; i < numberOfNotchers; i++) {
+        if (notchers[i] != null && notchers[i].ready) {
+            if (pIP.equals(notchers[i].ipAddrS)) {
+                return (notchers[i]);
             }
         }
     }
@@ -687,7 +731,7 @@ Notcher findUnitByIP(String pIP)
 public boolean getSimulate()
 {
     
-    return (simulateControlBoards);
+    return (simulateNotchers);
 
 }//end of NotcherHandler::getSimulate
 //-----------------------------------------------------------------------------
@@ -698,7 +742,7 @@ public boolean getSimulate()
 // Sleeps for pTime milliseconds.
 //
 
-void waitSleep(int pTime)
+private void waitSleep(int pTime)
 {
 
     try{
@@ -718,13 +762,13 @@ void waitSleep(int pTime)
 // This is useful for determining which unit did not respond.
 //
 
-void setUDPResponseFlag(String pIPAddress)
+private void setUDPResponseFlag(String pIPAddress)
 {
 
     //set the flag in the utBoard with the matching IP address
-    for (int i = 0; i < numberOfControlBoards; i++) {
-        if (controlBoards[i].ipAddrS.equals(pIPAddress)) {
-            controlBoards[i].udpResponseFlag = true;
+    for (int i = 0; i < numberOfNotchers; i++) {
+        if (notchers[i].ipAddrS.equals(pIPAddress)) {
+            notchers[i].udpResponseFlag = true;
         }
     }
 
@@ -739,13 +783,13 @@ void setUDPResponseFlag(String pIPAddress)
 // This is useful for determining which unit(s) did not respond.
 //
 
-void displayUnresponsiveIPAddresses()
+private void displayUnresponsiveIPAddresses()
 {
 
     //set the flag in the utBoard with the matching IP address
-    for (int i = 0; i < numberOfControlBoards; i++) {
-        if (!controlBoards[i].udpResponseFlag) {
-            log.appendLine("Notcher " + controlBoards[i].ipAddrS);
+    for (int i = 0; i < numberOfNotchers; i++) {
+        if (!notchers[i].udpResponseFlag) {
+            tsLog.appendLine("Notcher " + notchers[i].ipAddrS);
         }
     }
 
@@ -758,7 +802,8 @@ void displayUnresponsiveIPAddresses()
 // Sends pByte via the UDP socket pSocket using pOutPacket.
 //
 
-void sendByteUDP(DatagramSocket pSocket, DatagramPacket pOutPacket, byte pByte)
+private void 
+    sendByteUDP(DatagramSocket pSocket, DatagramPacket pOutPacket, byte pByte)
 {
 
     pOutPacket.getData()[0] = pByte; //store the byte in the buffer
@@ -781,7 +826,7 @@ void sendByteUDP(DatagramSocket pSocket, DatagramPacket pOutPacket, byte pByte)
 // Logs pMessage with level SEVERE using the Java logger.
 //
 
-void logSevere(String pMessage)
+private void logSevere(String pMessage)
 {
 
     Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage);
@@ -796,7 +841,7 @@ void logSevere(String pMessage)
 // the Java logger.
 //
 
-void logStackTrace(String pMessage, Exception pE)
+private void logStackTrace(String pMessage, Exception pE)
 {
 
     Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage, pE);

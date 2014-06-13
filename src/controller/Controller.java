@@ -1,7 +1,7 @@
 /******************************************************************************
 * Title: Controller.java
 * Author: Mike Schoonover, Hunter Schoonover
-* Date: 11/15/12
+* Date: 06/12/14
 *
 * Purpose:
 *
@@ -36,15 +36,14 @@
 
 package controller;
 
+import Hardware.NotcherHandler;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import model.ADataClass;
-import model.IniFile;
 import model.Options;
 import view.View;
 
@@ -53,16 +52,20 @@ import view.View;
 // class Controller
 //
 
-public class Controller implements EventHandler, Runnable
+public class Controller implements EventProcessor
 {
 
     private ADataClass aDataClass;
 
     private View view;
 
-    private Options options;
+    private NotcherHandler notcherHandler;
     
-    private NotcherController[] notchControllerArray;
+    private Options options;
+
+    private boolean createNotcherControllersTrigger = false;
+    
+    private NotcherEventHandler[] notcherEventHandlers;
 
     private final Boolean blinkStatusLabel = false;
 
@@ -84,19 +87,11 @@ public class Controller implements EventHandler, Runnable
     private String XMLPageFromRemote;
 
     private boolean shutDown = false;
-    private boolean simulation;
 
     private final JFileChooser fileChooser = new JFileChooser();
 
     private final String newline = "\n";
-    
-    // hss wip -- should be removed after notchers
-    // are detected on the network
-    private static final int NCNUMBER = 4;
-    
-    private int xPositionMainWindow;
-    private int yPositionMainWindow;
-    
+            
 //-----------------------------------------------------------------------------
 // Controller::Controller (constructor)
 //
@@ -121,20 +116,17 @@ public void init()
     aDataClass = new ADataClass();
     aDataClass.init();
 
-    view = new View(this, xPositionMainWindow, yPositionMainWindow, aDataClass);
-    view.init();
-
-    //create and load the program options
-    options = new Options();
-
-    //start the control thread
-    new Thread(this).start();
+    view = new View(this, options.getXPositionMainWindow(),
+                                options.getXPositionMainWindow(), aDataClass);
+    view.init(); //wip hss -- this should only display a small logo window with the log window -- add NotcherUIs after connecting
 
     view.setupAndStartMainTimer();
     
-    determineNumberOfNotchersOnNetwork();
-    
-    createNotcherControllers();
+    notcherHandler = new NotcherHandler(view.getThreadSafeLogger());
+    notcherHandler.init();
+
+    //connect to Notchers in a background thread
+    connectToNotchers();
 
 }// end of Controller::init
 //-----------------------------------------------------------------------------
@@ -149,43 +141,17 @@ public void init()
 public void loadGeneralSettings()
 {
 
-    IniFile generalFile = new IniFile("GeneralSettings.ini", "UTF-8");
-    try {
-        generalFile.init();
-    } catch(IOException e) {
-        return;
-    }
-    
-    xPositionMainWindow = generalFile.readInt
-        ("General", "X Position of Main Window", Integer.MIN_VALUE);
-    yPositionMainWindow = generalFile.readInt
-        ("General", "Y Position of Main Window", Integer.MIN_VALUE);
-    simulation = generalFile.readBoolean("General", "simulation", false);
+    options = new Options();
+    options.init();
 
 }// end of Controller::loadGeneralSettings
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::determineNumberOfNotchersOnNetwork
-//
-// Sends a UDP packet to all remotes on the network. The notchers will return
-// their IP addresses which are then stored in a list. The list is then used
-// to make connection with each one separately.
-// 
-// hss wip -- does not yet detect notchers on network; the number of notchers is
-// preset
-//
-
-public void determineNumberOfNotchersOnNetwork()
-{
-
-    notchControllerArray = new NotcherController[NCNUMBER];
-
-}// end of Controller::determineNumberOfNotchersOnNetwork
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // Controller::createNotcherControllers
+//
+// Creates the NotcherEventHandler objects. Should be called only once after
+// connection has been made to the notchers.
 //
 // Goes through the process of creating a notcherController object for each
 // index in the notcher array.
@@ -193,12 +159,17 @@ public void determineNumberOfNotchersOnNetwork()
 
 public void createNotcherControllers()
 {
+    
+    createNotcherControllersTrigger = false; //only called once
 
-    for (int i = 0; i < notchControllerArray.length; i++) {
+    notcherEventHandlers = 
+            new NotcherEventHandler[notcherHandler.getNumberOfNotchers()];
+    
+    for (int i = 0; i < notcherEventHandlers.length; i++) {
         
-        notchControllerArray[i] = new NotcherController(view, i);
+        notcherEventHandlers[i] = new NotcherEventHandler(view, i);
         
-        notchControllerArray[i].init();
+        notcherEventHandlers[i].init();
     
     }
     
@@ -298,14 +269,18 @@ public void saveDataToFile()
 //
 // Performs actions driven by the timer.
 //
-// Not used for accessing network -- see run function for details.
-//
 
 public void doTimerActions()
 {
+  
+    if (createNotcherControllersTrigger) { createNotcherControllers(); }
     
-    for (NotcherController notchControllerArray1 : notchControllerArray) {
-        notchControllerArray1.doTimerActions();
+    if (notcherEventHandlers == null) { return; }
+    
+    control();
+    
+    for (NotcherEventHandler notcherEventHandler : notcherEventHandlers) {
+        notcherEventHandler.doTimerActions();
     }
     
 }//end of Controller::doTimerActions
@@ -366,15 +341,13 @@ private void doSomething1()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::doSomethingInWorkerThread
+// Controller::connectToNotchers
 //
-// Does nothing right now -- modify it to call a function which takes a long
-// time to finish. It will be run in a background thread so the GUI is still
-// responsive.
-// -- CHANGE THE NAME TO REFLECT THE ACTION BEING DONE --
+// Connect to the Notchers and create the NotcherEventHandler objects which will
+// also create NotcherUI objects.
 //
 
-private void doSomethingInWorkerThread()
+private void connectToNotchers()
 {
 
     //define and instantiate a worker thread to create the file
@@ -388,8 +361,10 @@ private void doSomethingInWorkerThread()
         @Override
         public Void doInBackground() {
 
-            //do the work here by calling a function
-
+            notcherHandler.connect();
+            
+            createNotcherControllersTrigger = true;
+    
             return(null);
 
         }//end of doInBackground
@@ -433,7 +408,9 @@ private void doSomethingInWorkerThread()
     };//end of class SwingWorker
     //----------------------------------------------------------------------
 
-}//end of Controller::doSomethingInWorkerThread
+    workerThread.execute();
+    
+}//end of Controller::connectToNotchers
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -448,53 +425,9 @@ private void doSomething2()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::run
-//
-// This is the part which runs as a separate thread.  The actions of accessing
-// remote devices occur here.  If they are done in a timer call instead, then
-// buttons and displays get frozen during the sometimes lengthy calls to access
-// the network.
-//
-// NOTE:  All functions called by this thread must wrap calls to alter GUI
-// components in the invokeLater function to be thread safe.
-//
-
-@Override
-public void run()
-{
-
-    //call the control method repeatedly
-    while(true){
-
-        control();
-
-        //sleep for 2 seconds -- all timing is based on this period
-        threadSleep(2000);
-
-    }
-
-}//end of Controller::run
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Controller::threadSleep
-//
-// Calls the Thread.sleep function. Placed in a function to avoid the
-// "Thread.sleep called in a loop" warning -- yeah, it's cheezy.
-//
-
-public void threadSleep(int pSleepTime)
-{
-
-    try {Thread.sleep(pSleepTime);} catch (InterruptedException e) { }
-
-}//end of Controller::threadSleep
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // Controller::control
 //
-// Performs all display and control.  Call this from a thread.
+// Performs all display and control.  Call this from a timer.
 //
 
 public void control()
@@ -505,7 +438,6 @@ public void control()
         displayUpdateTimer = 0;
         //call function to update stuff here
     }
-
 
     //If a shut down is initiated, clean up and exit the program.
 

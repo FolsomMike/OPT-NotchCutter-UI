@@ -21,7 +21,8 @@ package view;
 
 //-----------------------------------------------------------------------------
 
-import controller.EventHandler;
+
+import controller.EventProcessor;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -71,7 +72,7 @@ public class View implements ActionListener, WindowListener
 
     private javax.swing.Timer mainTimer;
 
-    private final EventHandler eventHandler;
+    private final EventProcessor eventHandler;
 
     private Font blackSmallFont, redSmallFont;
     private Font redLargeFont, greenLargeFont, yellowLargeFont, blackLargeFont;
@@ -83,7 +84,7 @@ public class View implements ActionListener, WindowListener
 // View::View (constructor)
 //
 
-public View(EventHandler pEventHandler, int pXPositionMainWindow, 
+public View(EventProcessor pEventHandler, int pXPositionMainWindow, 
                             int pYPositionMainWindow, ADataClass pADataClass)
 {
 
@@ -110,7 +111,8 @@ public void init()
     //it in threadsafe manner
     log = new Log(mainFrame); log.setLocation(230, 0);
 
-    tsLog = new ThreadSafeLogger(log.textArea);
+    tsLog = new ThreadSafeLogger(log.getTextArea());
+    tsLog.init();
 
     //create an object to handle thread safe updates of GUI components
     guiUpdater = new GuiUpdater(mainFrame);
@@ -241,10 +243,10 @@ private void positionMainFrame()
 //-----------------------------------------------------------------------------
 // View::createNotcherUI
 //
-// Creates a new NotcherUI and passes pEventHandler in as the EventHandler.
+// Creates a new NotcherUI and passes pEventHandler in as the EventProcessor.
 //
 
-public NotcherUI createNotcherUI(EventHandler pEventHandler, int pIndexNumber)
+public NotcherUI createNotcherUI(EventProcessor pEventHandler, int pIndexNumber)
 {
 
     NotcherUI tempNotcherUI;
@@ -422,7 +424,7 @@ public void updateModelDataSet1()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::setupAndStartMainTimer
+// View::setupAndStartMainTimer
 //
 // Prepares and starts a Java Swing timer.
 //
@@ -435,7 +437,7 @@ public void setupAndStartMainTimer()
     mainTimer.setActionCommand ("Timer");
     mainTimer.start();
 
-}// end of Controller::setupAndStartMainTimer
+}// end of View::setupAndStartMainTimer
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -485,6 +487,20 @@ public void centerJFrame(JFrame pFrame)
                                             (screenHeight/2 - frameHeight/2));
 
 }// end of View::centerJFrame
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// View::getThreadSafeLogger
+//
+// Returns a reference to the ThreadSafeLogger object.
+//
+
+public ThreadSafeLogger getThreadSafeLogger()
+{
+
+    return(tsLog);
+    
+}// end of View::getThreadSafeLogger
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

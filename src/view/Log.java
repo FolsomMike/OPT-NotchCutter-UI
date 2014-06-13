@@ -7,8 +7,6 @@
 *
 * This class displays a window for displaying information.
 *
-* It also has a method for appending messages to an error log file.
-*
 * Open Source Policy:
 *
 * This source code is Public Domain and free to any interested party.  Any
@@ -21,9 +19,6 @@
 package view;
 
 import java.awt.*;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import javax.swing.*;
 
 //-----------------------------------------------------------------------------
@@ -35,7 +30,8 @@ import javax.swing.*;
 
 public class Log extends JDialog{
 
-    JTextArea textArea;
+    private final JTextArea textArea;
+    public JTextArea getTextArea() { return(textArea); }
 
     static public final String newline = "\n";
 
@@ -64,59 +60,6 @@ public Log(JFrame frame)
     setVisible(true);
 
 }//end of Log::Log (constructor)
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Log::appendString
-//
-// Appends a text string to the text window.
-//
-
-public void appendString(String pText)
-{
-
-    textArea.append(pText);
-
-}//end of Log::appendString
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Log::appendLine
-//
-// Appends a text string to the text window and appends a new line.
-//
-
-public void appendLine(String pText)
-{
-
-    textArea.append(pText + newline);
-
-}//end of Log::appendLine
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Log::appendToErrorLogFile
-//
-// Appends pMessage to the error log file "Error Log.txt".
-//
-
-public void appendToErrorLogFile(String pMessage)
-{
-
-    try (PrintWriter outputStream = 
-            new PrintWriter(new FileWriter("Error Log.txt", true))) {
-
-
-        outputStream.println(pMessage);
-
-    }
-    catch(IOException e){
-
-        //ignore the error -- can't write it to the log file
-
-    }
-
-}//end of Log::appendToErrorLogFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

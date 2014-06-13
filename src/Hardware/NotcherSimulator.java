@@ -87,6 +87,9 @@ public void init()
 
     super.init(notcherUnitNumber);
 
+    //start the simulation thread
+    new Thread(this).start();
+    
 }//end of NotcherSimulator::init
 //-----------------------------------------------------------------------------
 
@@ -291,6 +294,49 @@ void sendPacketHeader(byte pPacketID)
 
 }//end of NotcherSimulator::sendPacketHeader
 //----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherSimulator::driveSimulation
+//
+// This watches for packets from the host and returns data.
+//
+
+private void driveSimulation() {
+    
+    
+}//end of NotcherSimulator::driveSimulation
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherSimulator::NotcherSimulator
+//
+// This is the thread run code and is used to drive the simulation.
+//
+
+@Override
+public void run() {
+    
+    driveSimulation();
+    
+    waitSleep(300);
+    
+}//end of NotcherSimulator::run
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherSimulator::waitSleep
+//
+// Sleeps for pTime milliseconds.
+//
+
+public void waitSleep(int pTime)
+{
+
+    try {Thread.sleep(pTime);} catch (InterruptedException e) { }
+
+}//end of NotcherSimulator::waitSleep
+//-----------------------------------------------------------------------------
+
 
 }//end of class NotcherSimulator
 //-----------------------------------------------------------------------------
