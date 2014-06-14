@@ -240,6 +240,12 @@ private void connectNotchers(NetworkInterface pNetworkInterface)
     //initialize each Control board
     initializeNotchers();
 
+    //debug mks
+    int x = signed2BytesToInt((byte)0x80, (byte)0x00);
+    int y = unSigned2BytesToInt((byte)0x80, (byte)0x00);
+    int z = signed4BytesToInt((byte)0x80, (byte)0x00, (byte)0x00, (byte)0x00);
+    //debug mks
+    
 }//end of NotcherHandler::connectNotchers
 //-----------------------------------------------------------------------------
 
@@ -488,6 +494,51 @@ private void initializeNotchers()
     }
 
 }//end of NotcherHandler::initializeNotchers
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::signed2BytesToInt
+//
+// Converts the two bytes of a signed short int to an integer.
+//
+
+private int signed2BytesToInt(byte pByte1, byte pByte0)
+{
+
+    return (short)((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
+    
+}//end of NotcherHandler::signed2BytesToInt
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::unSigned2BytesToInt
+//
+// Converts the two bytes of an unsigned short to an integer.
+//
+
+private int unSigned2BytesToInt(byte pByte1, byte pByte0)
+{
+
+    return (int)((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
+    
+}//end of NotcherHandler::unSigned2BytesToInt
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::signed4BytesToInt
+//
+// Converts the four bytes of a signed integer to an integer.
+//
+
+private int signed4BytesToInt(
+                        byte pByte3, byte pByte2, byte pByte1, byte pByte0)
+{
+            
+    return
+         ((pByte3<<24) & 0xff000000) +  ((pByte2<<16) & 0xff0000)
+          + ((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
+
+}//end of NotcherHandler::signed4BytesToInt
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
