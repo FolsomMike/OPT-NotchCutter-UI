@@ -148,7 +148,7 @@ public void loadGeneralSettings()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::createNotcherControllers
+// Controller::createNotcherEventHandlers
 //
 // Creates the NotcherEventHandler objects. Should be called only once after
 // connection has been made to the notchers.
@@ -157,7 +157,7 @@ public void loadGeneralSettings()
 // index in the notcher array.
 //
 
-public void createNotcherControllers()
+public void createNotcherEventHandlers()
 {
     
     createNotcherControllersTrigger = false; //only called once
@@ -167,7 +167,8 @@ public void createNotcherControllers()
     
     for (int i = 0; i < notcherEventHandlers.length; i++) {
         
-        notcherEventHandlers[i] = new NotcherEventHandler(view, i);
+        notcherEventHandlers[i] = new NotcherEventHandler(
+                                    view, notcherHandler.getNotcher(i), i);
         
         notcherEventHandlers[i].init();
     
@@ -175,7 +176,7 @@ public void createNotcherControllers()
     
     view.finalizeAndDisplayMainFrame();
 
-}// end of Controller::createNotcherControllers
+}// end of Controller::createNotcherEventHandler
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -273,7 +274,7 @@ public void saveDataToFile()
 public void doTimerActions()
 {
   
-    if (createNotcherControllersTrigger) { createNotcherControllers(); }
+    if (createNotcherControllersTrigger) { createNotcherEventHandlers(); }
     
     if (notcherEventHandlers == null) { return; }
     

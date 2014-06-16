@@ -20,6 +20,7 @@
 
 package controller;
 
+import Hardware.Notcher;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
@@ -42,8 +43,10 @@ public class NotcherEventHandler implements EventProcessor, Runnable
 
     private ADataClass aDataClass;
 
-    private View view;
+    private final View view;
 
+    private final Notcher notcher;
+    
     private Options options;
     
     private NotcherUI notcherUI;
@@ -78,11 +81,10 @@ public class NotcherEventHandler implements EventProcessor, Runnable
 // NotcherEventHandler::NotcherEventHandler (constructor)
 //
 
-public NotcherEventHandler(View pView, int pIndexNmber)
+public NotcherEventHandler(View pView, Notcher pNotcher, int pIndexNmber)
 {
 
-    view = pView;
-    indexNumber = pIndexNmber;
+    view = pView; notcher = pNotcher; indexNumber = pIndexNmber;
     
 }//end of NotcherEventHandler::NotcherEventHandler (constructor)
 //-----------------------------------------------------------------------------
@@ -106,6 +108,11 @@ public void init()
     // new Thread(this).start(); //hss wip
     
     notcherUI = createNotcherUI();
+
+    //debug mks
+    notcher.sendTestSetValueCmd((byte)0xaa, 0x12345678);
+    notcher.sendTestSetValueCmd((byte)0xbb, -1);
+    //debug mks
 
 }// end of NotcherEventHandler::init
 //-----------------------------------------------------------------------------

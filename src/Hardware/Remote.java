@@ -62,6 +62,13 @@ public abstract class Remote extends Object{
     boolean enabled = false;
     int type;
 
+    byte lastPacketTypeHandled;
+    byte lastPacketTypeAcked;
+
+    int pktID;
+    boolean reSynced;
+    int reSyncCount = 0, reSyncPktID;
+     
     int controlFlags = 0;
     String configFilename;
     IniFile configFile;
@@ -80,6 +87,8 @@ public abstract class Remote extends Object{
     BufferedReader in = null;
     byte[] inBuffer;
     byte[] outBuffer;
+    byte[] outBufScratch;
+    int outBufScrIndex;
     DataOutputStream byteOut = null;
     DataInputStream byteIn = null;
 
@@ -113,27 +122,6 @@ void configure(IniFile pConfigFile)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Remote::sendRabbitControlFlags
-//
-// Sends the rabbitControlFlags value to the remotes. These flags control
-// the functionality of the remotes.
-//
-// The paramater pCommand is the command specific to the subclass for its
-// Rabbit remote.
-//
-
-public void sendRabbitControlFlags(final byte pCommand)
-{
-
-    sendBytes(pCommand,
-                (byte) ((rabbitControlFlags >> 8) & 0xff),
-                (byte) (rabbitControlFlags & 0xff)
-                );
-
-}//end of Remote::sendRabbitControlFlags
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // Remote::isEnabled
 //
 // Returns true if the channel is enabled, false otherwise.
@@ -161,6 +149,77 @@ public void setIPAddr(InetAddress pIPAddr)
     ipAddrS = pIPAddr.toString();
 
 }//end of Remote::setIPAddr
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Notcher::reSync
+//
+// Clears bytes from the socket buffer until 0xaa byte reached which signals
+// the *possible* start of a new valid packet header or until the buffer is
+// empty.
+//
+// If an 0xaa byte is found, the flag reSynced is set true to that other
+// functions will know that an 0xaa byte has already been removed from the
+// stream, signalling the possible start of a new packet header.
+//
+// There is a special case where a 0xaa is found just before the valid 0xaa
+// which starts a new packet - the first 0xaa is the last byte of the previous
+// packet (usually the checksum).  In this case, the next packet will be lost
+// as well.  This should happen rarely.
+//
+
+public void reSync()
+{
+
+    reSynced = false;
+
+    //track the number of times this function is called, even if a resync is not
+    //successful - this will track the number of sync errors
+    reSyncCount++;
+
+    //store info pertaining to what preceded the reSync - these values will be
+    //overwritten by the next reSync, so they only reflect the last error
+    //NOTE: when a reSync occurs, these values are left over from the PREVIOUS good
+    // packet, so they indicate what PRECEDED the sync error.
+
+    reSyncPktID = pktID;
+
+    try{
+        while (byteIn.available() > 0) {
+            byteIn.read(inBuffer, 0, 1);
+            if (inBuffer[0] == (byte)0xaa) {reSynced = true; break;}
+        }
+    }
+    catch(IOException e){
+        logSevere(e.getMessage() + " - Error: 847");
+    }
+
+}//end of Notcher::reSync
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Remote::sendHeader
+//
+// Sends a valid packet header without flushing.
+//
+
+void sendHeader()
+{
+
+    outBuffer[0] = (byte)0xaa; outBuffer[1] = (byte)0x55;
+    outBuffer[2] = (byte)0xbb; outBuffer[3] = (byte)0x66;
+
+    //send packet to remote
+    if (byteOut != null) {
+        try{
+            byteOut.write(outBuffer, 0 /*offset*/, 4);
+        }
+        catch (IOException e){
+            logSevere(e.getMessage() + " - Error: 569");
+        }
+    }
+
+}//end of Remote::sendHeader
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -200,28 +259,139 @@ void sendBytes(byte... pBytes)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Remote::sendHeader
+// Remote::sendBytes
 //
-// Sends a valid packet header without flushing.
+// Sends an array of bytes to the remote device, prepending a valid header and
+// appending the appropriate checksum. pNumbBytes specifies the number of bytes
+// in the array to send.
+//
+// This method accepts a primitive array rather than a variable length
+// argument list as it is more efficient when an array is to be passed.
 //
 
-void sendHeader()
+void sendByteArray(int pNumBytes, byte[] pBytes)
 {
 
-    outBuffer[0] = (byte)0xaa; outBuffer[1] = (byte)0x55;
-    outBuffer[2] = (byte)0xbb; outBuffer[3] = (byte)0x66;
+    int checksum = 0;
+
+    sendHeader(); //send the packet header
+
+    for(int i=0; i<pNumBytes; i++){
+        outBuffer[i] = pBytes[i];
+        checksum += pBytes[i];
+    }
+
+    //calculate checksum and put at end of buffer
+    outBuffer[pNumBytes] = (byte)(0x100 - (byte)(checksum & 0xff));
 
     //send packet to remote
     if (byteOut != null) {
         try{
-            byteOut.write(outBuffer, 0 /*offset*/, 4);
+              byteOut.write(outBuffer, 0 /*offset*/, pNumBytes + 1);
+              byteOut.flush();
         }
-        catch (IOException e){
-            logSevere(e.getMessage() + " - Error: 569");
+        catch (IOException e) {
+            logSevere(e.getMessage() + " - Error: 422");
         }
     }
 
-}//end of Remote::sendHeader
+}//end of Remote::sendBytes
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Remote::sendBytes
+//
+// Sends a variable number of bytes (one or more) to the remote device,
+// prepending a valid header and appending the appropriate checksum.
+//
+// NOTE: This version handles a list of bytes for arguments or an array. It is
+// actually more efficient to use the sendByteArray(byte[] pBytes) version for
+// arrays as Java doesn't have to create the Byte objects. Likewise, it is
+//  more efficient to use the sendBytes(Byte... pBytes) version for a list of
+//  values.
+//
+// Bytes class is used instead of primitive byte for arguments because that
+// allows an array of Bytes to be passed in instead of having to always pass in
+// seperate bytes. So, this method may be called in either way:
+//
+//      Byte byte0 = 0, byte1 = 1;
+//      sendBytes((byte)1, (byte)2, byte0, byte1);
+//      //note that the (byte) values are reboxed as Bytes by Java
+// 
+//          OR
+//
+//      Byte[] temp = new Byte[3];
+//      temp[0] = 0; temp[1] = 1; temp[2] = 2;
+//      sendBytes(temp);
+//
+
+void sendBytes(Byte... pBytes)
+{
+
+    int checksum = 0;
+
+    sendHeader(); //send the packet header
+
+    for(int i=0; i<pBytes.length; i++){
+        outBuffer[i] = pBytes[i];
+        checksum += pBytes[i];
+    }
+
+    //calculate checksum and put at end of buffer
+    outBuffer[pBytes.length] = (byte)(0x100 - (byte)(checksum & 0xff));
+
+    //send packet to remote
+    if (byteOut != null) {
+        try{
+              byteOut.write(outBuffer, 0 /*offset*/, pBytes.length + 1);
+              byteOut.flush();
+        }
+        catch (IOException e) {
+            logSevere(e.getMessage() + " - Error: 422");
+        }
+    }
+
+}//end of Remote::sendBytes
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Simulator::unpackShortInt
+//
+// Unpacks pShortInt into pArray as two bytes, MSB first, at position specified
+// by class member variable outBufScrIndex.
+//
+// On exit, outBufScrIndex will point to the array position after the unpacked
+// bytes.
+//
+
+void unpackShortInt(int pShortInt, byte[] pArray)
+{
+
+    pArray[outBufScrIndex++] = (byte)((pShortInt >> 8) & 0xff);
+    pArray[outBufScrIndex++] = (byte)(pShortInt & 0xff);
+
+}//end of Simulator::sendShortInt
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Simulator::unpackInt
+//
+// Unpacks pInt into pArray as four bytes, MSB first, at position specified
+// by class member variable outBufScrIndex.
+//
+// On exit, outBufScrIndex will point to the array position after the unpacked
+// bytes.
+//
+
+void unpackInt(int pInt, byte[] pArray)
+{
+
+    pArray[outBufScrIndex++] = (byte)((pInt >> 24) & 0xff);
+    pArray[outBufScrIndex++] = (byte)((pInt >> 16) & 0xff);
+    pArray[outBufScrIndex++] = (byte)((pInt >> 8) & 0xff);
+    pArray[outBufScrIndex++] = (byte)(pInt & 0xff);
+
+}//end of Simulator::unpackInt
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -251,6 +421,56 @@ boolean waitForNumberOfBytes(int pNumBytes)
     return(false);
 
 }//end of Remote::waitForNumberOfBytes
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Remote::readBlockAndVerify
+//
+// Reads pNumberOfBytes from byteIn into inBuffer and also reads the checksum
+// byte. The bytes (including the last one which is the checksum) are summed
+// with pPktID and then compared with 0x00.
+//
+// The packet ID (packet command) is passed in as it will already have been
+// read from the socket but is needed to compute the checksum.
+//
+// The value pNumberOfBytes should be equal to the number of data bytes...NOT
+// including the checksum.
+//
+// Returns the number of bytes read if specified number of bytes were read and
+// the checksum verified. Returns -1 otherwise.
+//
+
+int readBlockAndVerify(int pNumberOfBytes, byte pPktID)
+{
+
+    int totalNumBytes = pNumberOfBytes + 1; //account for the checksum
+    
+    int bytesRead;
+
+    try{
+        bytesRead = byteIn.read(inBuffer, 0, totalNumBytes);
+    }
+    catch(IOException e){
+        logSevere(e.getMessage() + " - Error: 424");
+        return(-1);
+    }
+
+    if (bytesRead == totalNumBytes){
+
+        byte sum = 0;
+        for(int i = 0; i < totalNumBytes; i++) {sum += inBuffer[i];}
+
+        //calculate checksum to check validity of the packet
+        if ( (pPktID + sum & (byte)0xff) != 0) {return(-1);}
+    }
+    else{
+        //error -- not enough bytes could be read
+        return(-1);
+    }
+
+    return(bytesRead);
+
+}//end of Remote::readBlockAndVerify
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -287,124 +507,6 @@ public int readBytes(int pNumBytes)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Remote::getRemoteData
-//
-// Retrieves two data bytes from the remote device, using the command specified
-// by pCommand.
-//
-// The first byte is returned.
-//
-// If pForceProcessDataPackets is true, the processDataPackets function will
-// be called.  This is for use when that function is not already being called
-// by another thread.
-//
-// IMPORTANT NOTE: For this function to work, the sub-class must catch
-// the return packet type in its processOneDataPacket method and then read in
-// the necessary data -- a simple way is to call process2BytePacket after
-// catching the return packet.
-// Search for GET_STATUS_CMD in UTBoard to see an example.
-//
-
-byte getRemoteData(byte pCommand, boolean pForceProcessDataPackets)
-{
-
-    if (byteIn == null) {return(0);}
-
-    sendBytes(pCommand); //request the data from the remote
-
-    //force waiting for and processing of receive packets
-    if (pForceProcessDataPackets) {processDataPackets(true, TIMEOUT);}
-
-    return inBuffer[0];
-
-}//end of Remote::getRemoteData
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Remote::getRemoteAddressedData
-//
-// Retrieves a data byte from the remote device, using the command specified
-// by pCommand and the value pData which can be used as an address or other
-// specifier.
-//
-
-byte getRemoteAddressedData(byte pCommand, byte pSendData)
-{
-
-    if (byteIn == null) {return(0);}
-
-    sendBytes(pCommand, pSendData);
-
-    int IN_BUFFER_SIZE = 2;
-    byte[] inBuf;
-    inBuf = new byte[IN_BUFFER_SIZE];
-
-    try{
-        while(true){
-
-            if (byteIn.available() >= IN_BUFFER_SIZE){
-
-                byteIn.read(inBuf, 0, IN_BUFFER_SIZE);
-                break;
-
-            }// if
-        }// while...
-    }// try
-    catch(IOException e){
-        logSevere(e.getMessage() + " - Error: 668");
-    }
-
-    return inBuf[0];
-
-}//end of Remote::getRemoteAddressedData
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Remote::getRemoteDataBlock
-//
-// Retrieves a data block from the remote device, using the command specified
-// by pCommand, a command qualifier specified by pQualifier, and the block
-// size specified by pSize.  The data is returned via pBuffer.
-//
-
-void getRemoteDataBlock(byte pCommand, byte pQualifier, int pSize,
-                                                                 int[] pBuffer)
-{
-
-    //debug mks - remove this line - reinsert next block
-
-    /*
-
-    if (byteIn == null) return;
-
-    sendBytes4(pCommand, pQualifier,
-              (byte) ((pSize >> 8) & 0xff), (byte) (pSize & 0xff));
-
-    try{
-        while(true){
-
-            if (byteIn.available() >= pSize){
-
-                byteIn.read(pktBuffer, 0, pSize);
-                break;
-
-                }// if
-            }// while...
-        }// try
-    catch(IOException e){}
-
-    //transfer the bytes to the int array - allow for sign extension
-    for (int i=0; i<pSize; i++) pBuffer[i] = (int)pktBuffer[i];
-
-    //use this line to prevent sign extension
-    //for (int i=0; i<pSize; i++) pBuffer[i] = ((int)pktBuffer[i]) & 0xff;
-
-    */
-
-}//end of Remote::getRemoteDataBlock
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // Remote::processDataPackets
 //
 // The amount of time the function is to wait for a packet is specified by
@@ -412,29 +514,51 @@ void getRemoteDataBlock(byte pCommand, byte pQualifier, int pSize,
 //
 // See processOneDataPacket notes for more info.
 //
+// Waits for a packet for at least the specified pTimeOut. For no waiting,
+// pass pTimeOut to 0...if no packet is available will return immediately.
+//
 
-public int processDataPackets(boolean pWaitForPkt, int pTimeOut)
+public int processDataPackets(int pTimeOut)
 {
 
     int x = 0;
 
     //process packets until there is no more data available
 
-    // if pWaitForPkt is true, only call once or an infinite loop will occur
-    // because the subsequent call will still have the flag set but no data
-    // will ever be coming because this same thread which is now blocked is
-    // sometimes the one requesting data
+    while ((x = processOneDataPacket(pTimeOut)) != -1){}
 
-    if (pWaitForPkt) {
-        return processOneDataPacket(pWaitForPkt, pTimeOut);
-    }
-    else {
-        while ((x = processOneDataPacket(pWaitForPkt, pTimeOut)) != -1){}
-    }
-
-    return x;
+    return (x);
 
 }//end of Remote::processDataPackets
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Notcher::processDataPacketsUntilSpecifiedType
+//
+// Reads packets until packet of target type is reached or until a timeout
+// occurs due to no more data available.
+//
+// Waits for a packet for at least the specified pTimeOut. For no waiting,
+// pass pTimeOut to 0...if no packet is available will return immediately.
+//
+
+public int processDataPacketsUntilSpecifiedType(
+                                         int  pTargetPacketType, int pTimeOut)
+{
+
+    int x = 0;
+
+    //process packets until target type reached or no more data available
+
+    while ((x = processOneDataPacket(pTimeOut)) != -1){
+    
+        if (lastPacketTypeHandled == pTargetPacketType){ break; }
+    
+    }
+
+    return (x);
+
+}//end of Notcher::processDataPacketsUntilSpecifiedType
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -446,8 +570,11 @@ public int processDataPackets(boolean pWaitForPkt, int pTimeOut)
 // This function should be overridden by sub-classes to provide specialized
 // functionality.
 //
+// Waits for a packet for at least the specified pTimeOut. For no waiting,
+// pass pTimeOut to 0...if no packet is available will return immediately.
+//
 
-public int processOneDataPacket(boolean pWaitForPkt, int pTimeOut)
+public int processOneDataPacket(int pTimeOut)
 {
 
     return(0);

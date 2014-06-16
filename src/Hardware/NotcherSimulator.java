@@ -50,6 +50,9 @@ public class NotcherSimulator extends Simulator{
     int notcherUnitNumber;
 
     byte controlFlags = 0, portE = 0;
+
+    byte testSetByte;   //used for example -- DO NOT DELETE
+    int testSetInt;     //used for example -- DO NOT DELETE
     
 //-----------------------------------------------------------------------------
 // NotcherSimulator::NotcherSimulator (constructor)
@@ -94,54 +97,50 @@ public void init()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherSimulator::processDataPackets
+// Notcher::processOneDataPacket
 //
-// See processDataPacketsHelper notes for more info.
+// This function processes a single data packet if it is available.
+//
+// The amount of time the function is to wait for a packet is specified by
+// pTimeOut.  Each count of pTimeOut equals 10 ms.
+//
+// Waits for a packet for at least the specified pTimeOut. For no waiting,
+// pass pTimeOut to 0...if no packet is available will return immediately.
+//
+// This function should be called often to allow processing of data packets
+// received from the remotes and stored in the socket buffer.
+//
+// All packets received from the remote devices should begin with
+// 0xaa, 0x55, 0xbb, 0x66, followed by the packet identifier (usually the
+// command used by the host to request the packet).
+//
+// Returns number of bytes retrieved from the socket, not including the
+// 4 header bytes, the packet ID.
+//
+// Thus, if a non-zero value is returned, a packet was processed.  If zero
+// is returned, some bytes may have been read but a packet was not successfully
+// processed due to missing bytes or header corruption.
+//
+// A return value of -1 means that the buffer does not contain a packet and a
+// timeout has occurred.
 //
 
-public int processDataPackets(boolean pWaitForPkt)
+@Override
+public int processOneDataPacket(int pTimeOut)
 {
 
-    int x = 0;
-
-    //process packets until there is no more data available
-
-    // if pWaitForPkt is true, only call once or an infinite loop will occur
-    // because the subsequent call will still have the flag set but no data
-    // will ever be coming because this same thread which is now blocked is
-    // sometimes the one requesting data
-
-    if (pWaitForPkt) {
-        return processDataPacketsHelper(pWaitForPkt);
-    }
-    else {
-        while ((x = processDataPacketsHelper(pWaitForPkt)) != -1){}
-    }
-
-    return x;
-
-}//end of NotcherSimulator::processDataPackets
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// NotcherSimulator::processDataPacketsHelper
-//
-// Drive the simulation functions.  This function is usually called from a
-// thread.
-//
-
-public int processDataPacketsHelper(boolean pWaitForPkt)
-{
-
-    if (byteIn == null) {return 0;}  //do nothing if the port is closed
+    if (byteIn == null) {return -1;}  //do nothing if the port is closed
 
     try{
 
-        int x;
+        int timeOutWFP = 0;
+        while(byteIn.available() < 5 && timeOutWFP++ < pTimeOut){
+            waitSleep(10);
+        }
 
         //wait until 5 bytes are available - this should be the 4 header bytes,
-        //and the packet identifier/command
-        if ((x = byteIn.available()) < 5) {return -1;}
+        //and the packet identifier
+        if (byteIn.available() < 5) {return -1;}
 
         //read the bytes in one at a time so that if an invalid byte is
         //encountered it won't corrupt the next valid sequence in the case
@@ -152,7 +151,8 @@ public int processDataPacketsHelper(boolean pWaitForPkt)
         //byte is reached
 
         //if the reSynced flag is true, the buffer has been resynced and an 0xaa
-        //byte has already been read from buffer so it shouldn't be read again
+        //byte has already been read from the buffer so it shouldn't be read
+        //again
 
         //after a resync, the function exits without processing any packets
 
@@ -161,9 +161,7 @@ public int processDataPacketsHelper(boolean pWaitForPkt)
             byteIn.read(inBuffer, 0, 1);
             if (inBuffer[0] != (byte)0xaa) {reSync(); return 0;}
         }
-        else {
-            reSynced = false;
-        }
+        else {reSynced = false;}
 
         byteIn.read(inBuffer, 0, 1);
         if (inBuffer[0] != (byte)0x55) {reSync(); return 0;}
@@ -172,26 +170,33 @@ public int processDataPacketsHelper(boolean pWaitForPkt)
         byteIn.read(inBuffer, 0, 1);
         if (inBuffer[0] != (byte)0x66) {reSync(); return 0;}
 
-        //read the packet ID
+        //read in the packet identifier
         byteIn.read(inBuffer, 0, 1);
 
-        byte pktID = inBuffer[0];
+        lastPacketTypeHandled = inBuffer[0];
+        
+        //store the ID of the packet (the packet type)
+        pktID = inBuffer[0];
 
-        if (pktID == Notcher.GET_DATA_PACKET_CMD)
-            { return sendDataPacket();}
+        if (pktID == Notcher.GET_RUN_PACKET_CMD) {return(0); /*return readBytes(2);*/}
         else
-        if (pktID == Notcher.CUT_MODE_CMD){return invokeCutMode();}
+        if (pktID == Notcher.CUT_MODE_CMD){return(0); /*return readBytes(2);*/}
+        else 
+        if (pktID == Notcher.TEST_SET_VALUE_CMD){
+            return (handleTestSetValuePacket());
+        }
+        
+        
+        // add more commands here -- do not remove this comment
 
-        return 0;
-
-    }//try
+    }
     catch(IOException e){
-        logSevere(e.getMessage() + " - Error: 221");
+        logSevere(e.getMessage() + " - Error: 799");
     }
 
     return 0;
 
-}//end of NotcherSimulator::processDataPacketsHelper
+}//end of Notcher::processOneDataPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -209,6 +214,71 @@ public int sendDataPacket()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// NotcherSimulator::sendACKPacket
+//
+// Sends a packet with the command type set to ACK_CMD. The packet type of
+// the packet type just read from the socket for which this packet is a response
+// is returned as a data byte so the host can match ACK packets to their
+// associated command packets.
+//
+
+private void sendACKPacket()
+{
+    
+    //the values are unpacked into bytes and stored in outBufScratch
+    //outBufScrIndex is used to load the array, start at position 0
+    
+    outBufScrIndex = 0;
+    
+    outBufScratch[outBufScrIndex++] = Notcher.ACK_CMD;
+    
+    //the byte is placed right here in this method
+    outBufScratch[outBufScrIndex++] = lastPacketTypeHandled;
+        
+    //send header, the data, and checksum
+    sendByteArray(outBufScrIndex, outBufScratch);
+    
+}//end of NotcherSimulator::sendTestSetValueCmd
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherSimulator::handleTestSetValuePacket
+//
+// Handles ACK packets received from the remote.
+//
+// Returns the number of bytes read from the socket.
+//
+// If the the bytes in the packet could not be read or were not validated by
+// the checksum, return -1.
+//
+
+private int handleTestSetValuePacket()
+{
+    
+    int dataSize = 5; //one byte plus one integer (4 bytes)
+    
+    //read remainder of packet from socket and verify against the checksum
+    int status = readBlockAndVerify(dataSize, Notcher.TEST_SET_VALUE_CMD);
+
+    //on error reading and verifying, return the error code
+    if (status == -1){ return(status); }
+  
+    //only store the values if there was no error -- errors cause return above
+
+    outBufScrIndex = 0; //start with byte 0 in array
+    
+    testSetByte = inBuffer[outBufScrIndex];
+    
+    testSetInt = extractInt(inBuffer);
+    
+    sendACKPacket();
+    
+    return(status);
+    
+}//end of NotcherSimulator::handleTestSetValuePacket
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // NotcherSimulator::invokeCutMode
 //
 // Sets mode to "Cut".
@@ -223,86 +293,16 @@ public int invokeCutMode()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherSimulator::readBlockAndVerify
-//
-// Reads pNumberOfBytes from byteIn into inBuffer. The bytes (including the last
-// one which is the checksum) are summed with pPktID and then compared with
-// 0x00.
-//
-// The value pNumberOfBytes should be equal to the number of data bytes
-// remaining in the packet plus one for the checksum.
-//
-// Returns the number of bytes read if specified number of bytes were read and
-// the checksum verified. Returns -1 otherwise.
-//
-
-int readBlockAndVerify(int pNumberOfBytes, byte pPktID)
-{
-
-    int bytesRead;
-
-    try{
-        bytesRead = byteIn.read(inBuffer, 0, pNumberOfBytes);
-    }
-    catch(IOException e){
-        logSevere(e.getMessage() + " - Error: 299");
-        return(-1);
-    }
-
-    if (bytesRead == pNumberOfBytes){
-
-        byte sum = 0;
-        for(int i = 0; i < pNumberOfBytes; i++) {sum += inBuffer[i];}
-
-        //calculate checksum to check validity of the packet
-        if ( (pPktID + sum & (byte)0xff) != 0) {return(-1);}
-    }
-    else{
-        //error -- not enough bytes could be read
-        return(-1);
-    }
-
-    return(bytesRead);
-
-}//end of NotcherSimulator::readBlockAndVerify
-//-----------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------
-// NotcherSimulator::sendPacketHeader
-//
-// Sends via the socket: 0xaa, 0x55, 0xaa, 0x55, packet identifier.
-//
-// Does not flush.
-//
-
-void sendPacketHeader(byte pPacketID)
-{
-
-    outBuffer[0] = (byte)0xaa; outBuffer[1] = (byte)0x55;
-    outBuffer[2] = (byte)0xbb; outBuffer[3] = (byte)0x66;
-    outBuffer[4] = (byte)pPacketID;
-
-    //send packet to remote
-    if (byteOut != null) {
-        try{
-            byteOut.write(outBuffer, 0 /*offset*/, 5);
-        }
-        catch (IOException e) {
-            logSevere(e.getMessage() + " - Error: 573");
-        }
-    }
-
-}//end of NotcherSimulator::sendPacketHeader
-//----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // NotcherSimulator::driveSimulation
 //
 // This watches for packets from the host and returns data.
 //
 
 private void driveSimulation() {
-    
+
+    //process all data packets currently in the socket from the host
+    //set timeout to 0 -- no need to wait on packets
+    processDataPackets(0); 
     
 }//end of NotcherSimulator::driveSimulation
 //-----------------------------------------------------------------------------
@@ -315,10 +315,13 @@ private void driveSimulation() {
 
 @Override
 public void run() {
-    
-    driveSimulation();
-    
-    waitSleep(300);
+
+    while(true){
+        
+        driveSimulation();
+
+        waitSleep(5);
+    }
     
 }//end of NotcherSimulator::run
 //-----------------------------------------------------------------------------

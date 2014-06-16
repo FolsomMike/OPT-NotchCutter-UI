@@ -13,6 +13,9 @@
 * An Ethernet socket is then opened to establish a link to all devices in the
 * list.
 * 
+* Program Flow and Adding New Functionality
+* 
+* 
 * Open Source Policy:
 *
 * This source code is Public Domain and free to any interested party.  Any
@@ -239,7 +242,7 @@ private void connectNotchers(NetworkInterface pNetworkInterface)
 
     //initialize each Control board
     initializeNotchers();
-
+    
 }//end of NotcherHandler::connectNotchers
 //-----------------------------------------------------------------------------
 
@@ -491,6 +494,78 @@ private void initializeNotchers()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// NotcherHandler::handleNewData
+//
+// Displays, processes, or stores new data collected from the packets received
+// from the remotes.
+//
+// Should be called periodically by an Event Dispatch Thread Timer.
+//
+
+public void handleNewData()
+{
+
+    //call the various getters in each Notcher to retrieve the values
+    
+    //call the various View methods to display the values as required
+    
+    //call the various Model methods to save the values as required
+
+}//end of NotcherHandler::handleNewData
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::signed2BytesToInt
+//
+// Converts the two bytes of a signed short int to an integer.
+//
+// Use this if the original value was signed.
+//
+
+private int signed2BytesToInt(byte pByte1, byte pByte0)
+{
+
+    return (short)((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
+    
+}//end of NotcherHandler::signed2BytesToInt
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::unSigned2BytesToInt
+//
+// Converts the two bytes of an unsigned short to an integer.
+//
+// Use this if the original value was unsigned.
+//
+
+private int unSigned2BytesToInt(byte pByte1, byte pByte0)
+{
+
+    return (int)((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
+    
+}//end of NotcherHandler::unSigned2BytesToInt
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::signed4BytesToInt
+//
+// Converts the four bytes of a signed integer to an integer.
+//
+// Use this if the original value was signed.
+//
+
+private int signed4BytesToInt(
+                        byte pByte3, byte pByte2, byte pByte1, byte pByte0)
+{
+            
+    return
+         ((pByte3<<24) & 0xff000000) +  ((pByte2<<16) & 0xff0000)
+          + ((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
+
+}//end of NotcherHandler::signed4BytesToInt
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // NotcherHandler::logStatus
 //
 // Writes various status and error messages to the log window.
@@ -719,6 +794,21 @@ public Notcher findUnitByIP(String pIP)
     return(null);
     
 }//end of NotcherHandler::findUnitByIP
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::getNotcher
+//
+// Returns a reference to the Notcher in the array at position pIndex.
+//
+
+public Notcher getNotcher(int pIndex)
+{
+
+    return(notchers[pIndex]);
+
+}//end of NotcherHandler::getNotcher
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // NotcherHandler::getSimulate
