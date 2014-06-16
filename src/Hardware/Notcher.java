@@ -150,20 +150,21 @@
 * which a value(s) are sent to the remote.
 * 
 * See notes at the top of sendTestSetValueCmd and handleACKPkt in this class
-* for more explanation. Also see notes at the top of processTestSetValuePkt in
+* for more explanation. Also see notes at the top of handleTestSetValuePkt in
 * class NotcherSimulator.
 * 
-* Note that many similar commands may return ACK packets -- the command will
-* be set to ACK_CMD and the first byte will be set to the command of the
-* packet from the host being acknowledged.
+* Note that many similar commands may return ACK packets -- the return packet's
+* command value will be set to ACK_CMD and the first data byte will be set to
+* the command id of the original packet sent by the host and which is being
+* acknowledged by the ACK packet. Thus the host can match the ACK packet with
+* the packet which is being acknowledged.
 * 
 * Before calling sendTestSetValueCmd, set breakpoints at the top of 
 * Notcher.processOneDataPacket and NotcherSimulator.processDataPacketsHelper to
 * track the program flow. The second method (in NotcherSimulator class) will
 * be called first as the simulator receives the command packet. The first
-* method (this class, Notcher) will then be called when the simulator returns
-* the response packet. This assumes that some thread or timer is calling
-* Notcher.processOneDataPacket on a regular basis.
+* method (Notcher.processOneDataPacket) should be called by some thread or timer
+* on a regular basis so that it can handle the return packet when it arrives.
 *
 * Multiple Threads
 * 
@@ -205,7 +206,14 @@
 * 
 *       3) somewhere in your program, add three consecutive calls to your new
 *           Notcher.send***Cmd method (the calls can be made any time after
-*           Notcher.connect has completed)
+*           Notcher.connect has completed -- in your button event code, in a
+*           timer, etc.); the three calls will check to make sure the handling
+*           code is cleaning the packets from the socket properly else the
+*           breakpoints in the resync methods will be triggered -- REMOVE THE
+*           EXTRA TWO CALLS AFTER DEBUGGING COMPLETE -- the multiple calls are
+*           used only to make sure the packets are being cleaned up, if they
+*           are then you will not get halts at the resync breakpoints caused
+*           by leftover packet fragments
 * 
 *       4) place breakpoints at the top of both resync methods in the Remote
 *           and Simulator classes
