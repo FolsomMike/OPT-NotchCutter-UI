@@ -527,8 +527,6 @@ public int processOneDataPacket(int pTimeOut)
         if (pktID == GET_RUN_PACKET_CMD) {return readBytes(2);}  //wip hss -- call function to handle this instead of the return
         else
         if (pktID == CUT_MODE_CMD){return readBytes(2);} //wip hss -- call function to handle this instead of the return
-        else 
-        if (pktID == TEST_SET_VALUE_CMD){return handleTestSetValuePacket();}
 
         // add more commands here -- do not remove this comment
 
@@ -643,24 +641,6 @@ public int handleACKPacket()
     return(status);
         
 }//end of Notcher::handleACKPacket
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Notcher::handleTestSetValuePacket
-//
-// Handles ACK packets received from the remote.
-//
-// Returns the number of bytes read from the socket.
-//
-
-public int handleTestSetValuePacket()
-{
-
-    readBlockAndVerify(2, ACK_CMD);
-    
-    return(2);
-    
-}//end of Notcher::handleTestSetValuePacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
