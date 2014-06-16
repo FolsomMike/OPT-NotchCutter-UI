@@ -98,13 +98,15 @@
 * 
 * Using the asynchronous method, the host sends the command packet but does
 * not call processOneDataPacket immediately to wait for the return packet.
+* Instead, the program goes on about other business.
 * 
-* Instead, the host clears a flag to denote that it is waiting for a return
-* packet for that command and goes on about other business. The
-* processDataPackets method is called at some later time, usually by a thread
-* or timer. All waiting return packets are processed and their values stored
-* and the appropriate flags set so that the host can detect that new values are
-* ready for use.
+* The processDataPackets method is called at some later time, usually by a
+* thread or timer. All waiting return packets are processed at one time and
+* their values stored and the appropriate "data ready" flags set so that the
+* program can detect that new values are ready for use. At some point, the
+* program uses the new data values for display, saving, or control. At that
+* time, the "data ready" flags are cleared so the program knows not to use the
+* data again until new data has been received and the flags are set again.
 * 
 * Which Method to Use
 * 
