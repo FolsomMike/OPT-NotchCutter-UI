@@ -54,6 +54,8 @@ public class NotcherSimulator extends Simulator{
     byte testSetByte;   //used for example -- DO NOT DELETE
     int testSetInt;     //used for example -- DO NOT DELETE
     
+    byte electrodeSupplyOnOffByte;
+    
 //-----------------------------------------------------------------------------
 // NotcherSimulator::NotcherSimulator (constructor)
 //
@@ -185,6 +187,10 @@ public int processOneDataPacket(int pTimeOut)
         if (pktID == Notcher.TEST_SET_VALUE_CMD){
             return (handleTestSetValuePacket());
         }
+        else 
+        if (pktID == Notcher.ELECTRODE_SUPPLY_ON_OFF_CMD){
+            return (handleElectrodeSupplyOnOffCmdPacket());
+        }
         
         
         // add more commands here -- do not remove this comment
@@ -238,7 +244,7 @@ private void sendACKPacket()
     //send header, the data, and checksum
     sendByteArray(outBufScrIndex, outBufScratch);
     
-}//end of NotcherSimulator::sendTestSetValueCmd
+}//end of NotcherSimulator::sendACKPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -258,10 +264,10 @@ private int handleTestSetValuePacket()
     int dataSize = 5; //one byte plus one integer (4 bytes)
     
     //read remainder of packet from socket and verify against the checksum
-    int status = readBlockAndVerify(dataSize, Notcher.TEST_SET_VALUE_CMD);
+    int lStatus = readBlockAndVerify(dataSize, Notcher.TEST_SET_VALUE_CMD);
 
     //on error reading and verifying, return the error code
-    if (status == -1){ return(status); }
+    if (lStatus == -1){ return(status); }
   
     //only store the values if there was no error -- errors cause return above
 
@@ -273,9 +279,45 @@ private int handleTestSetValuePacket()
     
     sendACKPacket();
     
-    return(status);
+    return(lStatus);
     
 }//end of NotcherSimulator::handleTestSetValuePacket
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherSimulator::handleElectrodeSupplyOnOffCmdPacket
+//
+// Handles ACK packets received from the remote for the electrodeSupplyOnOffCmd.
+//
+// Returns the number of bytes read from the socket.
+//
+// If the the bytes in the packet could not be read or were not validated by
+// the checksum, return -1.
+//
+
+private int handleElectrodeSupplyOnOffCmdPacket()
+{
+    
+    int dataSize = 1; //one byte
+    
+    //read remainder of packet from socket and verify against the checksum
+    int lStatus = readBlockAndVerify(dataSize, 
+                                        Notcher.ELECTRODE_SUPPLY_ON_OFF_CMD);
+
+    //on error reading and verifying, return the error code
+    if (lStatus == -1){ return(status); }
+  
+    //only store the values if there was no error -- errors cause return above
+
+    outBufScrIndex = 0; //start with byte 0 in array
+    
+    electrodeSupplyOnOffByte = inBuffer[outBufScrIndex];
+    
+    sendACKPacket();
+    
+    return(lStatus);
+    
+}//end of NotcherSimulator::handleElectrodeSupplyOnOffCmdPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -302,13 +344,13 @@ private void driveSimulation() {
 
     //process all data packets currently in the socket from the host
     //set timeout to 0 -- no need to wait on packets
-    processDataPackets(0); 
+    processDataPackets(0);
     
 }//end of NotcherSimulator::driveSimulation
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherSimulator::NotcherSimulator
+// NotcherSimulator::run
 //
 // This is the thread run code and is used to drive the simulation.
 //
