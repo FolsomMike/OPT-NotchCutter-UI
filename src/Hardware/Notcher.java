@@ -5,8 +5,232 @@
 *
 * Purpose:
 *
-* This class interfaces with a NotchCutter unit.
+* This class interfaces with a NotchCutter unit via Ethernet.
 *
+* Packet Format
+* 
+* All packets sent and received are of format:
+* 
+* 0xaa
+* 0x55
+* 0xbb
+* 0x66
+* command byte
+* data byte 0
+* data byte 1
+* data byte 2
+* ...
+* checksum (of command and data bytes)
+*
+* Communication Flow 
+*
+* The data to and from the remotes is piped through sockets. The sockets have
+* buffering and will store multiple data packets before being read. They must
+* be read fast enough to prevent buffer overflow.
+* 
+* When using synchronous communication, the host sends a command packet and
+* then waits a specified time for the return packet. If the timeout occurs
+* before the expected packet arrives, the host can either ignore the failure
+* or resend the packet depending on the criticality of the return packet.
+* 
+* One problem that occurs is that the remote might return the packet after the
+* the timeout but the host has already moved on to other processing. The
+* late packet will be stuck in the buffer. Therefore, for synchronous
+* processing, the processDataPacketsUntilSpecifiedType method is called after
+* sending a command packet as it will clear out any leftover packets in the
+* buffer to reach the expected return packet.
+* 
+* The packets are processed by different methods specific to each packet type.
+* When leftover packets are being processed, their data might be stored in
+* persistent variables for later collection by the host. When the
+* processDataPacketsUntilSpecifiedType method is called, the host will not get
+* a chance to collect that data until later as the method does not return
+* until all packets have been processed or the target packet type has been
+* reached.
+* 
+* If multiple packets of the same type are received before the host can
+* collect the data, data from earlier packets will be overwritten by later
+* packets. If the data is merely for informational display, it often does not
+* matter if some data is skipped.
+* 
+* In other cases, the handling method can store peak data such as the max
+* and/or min. Thus, the important nature of the data is not lost as it is
+* typical that displaying or detecting the max or min is adequate. One case is
+* where the system should trigger an alarm if the value goes above or below a
+* certain threshold -- the min/max values stored can be used later to check
+* for the violation.
+* 
+* In cases where every single data point is important, the handling method can
+* store the variables in an array or Collection object and the host can process
+* all the values collected when it has time.
+* 
+* It is up to the programmer to decide which data can be skipped, which must
+* have max/mins recorded, and which must be buffered so that none is lost.
+* 
+*  Synchronous Method
+* 
+* Using the synchronous method, the host sends a command packet and then waits
+* a specified time for the return packet by calling 
+* 
+*   processDataPacketsUntilSpecifiedType
+* 
+* As noted above, this will force all packets in the buffer to be processed
+* until the target packet type is reached.
+* 
+* If the remote does not respond in time, then the calling method may ignore the
+* failure or may attempt to resend the command, depending on the criticality
+* of success.
+* 
+* If constantly updating a display repeatedly from values received from the
+* remote, resending may not be necessary as the update will be refreshed
+* properly on the next cycle -- the old values will simply be displayed for
+* one extra cycle through the loop.
+* 
+* On the other hand, sending a control value to the remote may be very critical
+* as the value may affect operation. Thus, if the remote does not return with
+* an ACK packet, it may be necessary to resend the control value. Due to the
+* robust error correcting nature of TCP/IP, it may be safe to ignore the ACK
+* packet anyway and just assume that communication was successful. Note that
+* the ACK packet must still be waited for so that it will be cleaned from the
+* buffer.
+* 
+*  Asynchronous Method
+* 
+* Using the asynchronous method, the host sends the command packet but does
+* not call processOneDataPacket immediately to wait for the return packet.
+* 
+* Instead, the host clears a flag to denote that it is waiting for a return
+* packet for that command and goes on about other business. The
+* processDataPackets method is called at some later time, usually by a thread
+* or timer. All waiting return packets are processed and their values stored
+* and the appropriate flags set so that the host can detect that new values are
+* ready for use.
+* 
+* Which Method to Use
+* 
+* In general, the synchronous method is easiest to use but may not be the most
+* efficient as the host must wait for the return packet each time when it
+* could be performing other tasks.
+* 
+* Both methods may be used in the same program. Setting values in the remote
+* might work best synchronously as there is usually no time issue when simply
+* sending setup values. During time critical operations, the data packets
+* can be requested and processed asynchronously so the host can perform other
+* tasks between the request and the receive.
+* 
+* Adding New Remote Commands
+* 
+* Two different sample code sets have been included in this and the
+* NotcherSimulator class to serve as examples for adding commands:
+* 
+*   TEST_SET_VALUE_CMD
+*   TEST_PACKET_CMD
+* 
+* Search this class (Notcher) and NotcherSimulator for "TEST_SET_VALUE_CMD"
+* to find all code related to this command. Like wise, search for
+* "TEST_PACKET_CMD" for that code set.
+* 
+* To add a new command, make a new command send method and packet handling
+* method similar to those for the appropriate example code set. Then add
+* the command switch statement to processOneDataPacket to call the handler
+* when the packet type is received. (Search for the phrase 
+* "add more commands here" to find location to add the switch statement.)
+* 
+* NOTE: The process of adding a command must be repeated in NotcherSimulator,
+* but with the opposite logic. The message handler handles command packets and
+* returns response packets. Searching for the "TEST_SET_VALUE_CMD" and
+* "TEST_PACKET_CMD" phrases in that class will also reveal the necessary code
+* elements required.
+*
+*   TEST_SET_VALUE_CMD Code Set
+* 
+* The TEST_SET_VALUE_CMD is an example of an synchronous communication in
+* which a value(s) are sent to the remote.
+* 
+* See notes at the top of sendTestSetValueCmd and handleACKPkt in this class
+* for more explanation. Also see notes at the top of processTestSetValuePkt in
+* class NotcherSimulator.
+* 
+* Note that many similar commands may return ACK packets -- the command will
+* be set to ACK_CMD and the first byte will be set to the command of the
+* packet from the host being acknowledged.
+* 
+* Before calling sendTestSetValueCmd, set breakpoints at the top of 
+* Notcher.processOneDataPacket and NotcherSimulator.processDataPacketsHelper to
+* track the program flow. The second method (in NotcherSimulator class) will
+* be called first as the simulator receives the command packet. The first
+* method (this class, Notcher) will then be called when the simulator returns
+* the response packet. This assumes that some thread or timer is calling
+* Notcher.processOneDataPacket on a regular basis.
+*
+* Multiple Threads
+* 
+* If only a timer event is used in the program, then thread conflicts will not
+* be a problem. If another thread is created to execute the packet handling
+* code (such as by calling processDataPacketsUntilSpecifiedType), then the
+* synchronize keyword must be added to some of the methods to prevent
+* thread interference.
+* 
+* Since the new thread is collecting data and storing it in class member
+* variables when the handling code is called and the Event Dispatch Thread (EDT)
+* is calling getter methods for those same variables, the methods must be
+* tagged with the synchronize keyword.
+* 
+* For simplest code, synchronize can be applied to the 
+*   processDataPacketsUntilSpecifiedType method and all the getters used to
+* access the data variables can be declared as synchronized.
+* 
+* For slightly more efficient operation, each packet handler method which
+* saves data from the packet into the member variables can be declared
+* synchronized. This allows the EDT to use a getter when the other thread is in
+* the processDataPacketsUntilSpecifiedType method. Only when the other thread
+* is actually in a packet handler method will the getters be blocked.
+*
+* 
+* Overview of Adding and Testing New Commands
+* 
+*    Adding a Command to Send Values to the Remote
+* 
+*       1) search Notcher and Notcher Simulator for the phrase "TEST_PACKET_CMD"
+*           to find all code sections applicable
+* 
+*       2) copy and modify all applicable code sections for the new command;
+*           in these instructions, your new method which mimics
+*           Notcher.sendTestSetValueCmd is referred to as send***Cmd while your
+*           new method which mimics NotcherSimulator.handleTestSetValuePacket is
+*           referred to as handle***Packet; the actual name you use should
+*           describe the packet being sent, such as "sendResetCmd"
+* 
+*       3) somewhere in your program, add three consecutive calls to your new
+*           Notcher.send***Cmd method (the calls can be made any time after
+*           Notcher.connect has completed)
+* 
+*       4) place breakpoints at the top of both resync methods in the Remote
+*           and Simulator classes
+* 
+*       5) place breakpoints in Notcher.send***Cmd, 
+*           NotcherSimulator.handle***Packet and Notcher.handleACKPacket
+* 
+*       6) run the program
+* 
+*       7) the program should halt at the Notcher.send***Cmd breakpoint first;
+*           the program will stop multiple times at that point, once for each
+*           packet sent; step through the new method and verify its operation
+*
+*       8) a short time later, the program should halt at the breakpoint in
+*           NotcherSimulator.handle***Packet, once for each packet sent; step
+*           through the new method and verify its operation
+*
+*       9) the program will at some point halt at the breakpoint in
+*           Notcher.handleACKPacket as Notcher object receive ACK packets from
+*           the NotcherSimulator objects
+* 
+*       10) the breakpoints in the resync methods should NEVER halt -- if so
+*           then an error has occurred with the last packet; this is usually
+*           caused by reading too many or few bytes from the socket and thus
+*           corrupting the data order; a resync occurs when the header of a new
+*           packet is expected and is not found
+* 
 * Open Source Policy:
 *
 * This source code is Public Domain and free to any interested party.  Any
@@ -21,7 +245,6 @@ package Hardware;
 import java.io.*;
 import java.net.*;
 import model.IniFile;
-import view.Log;
 import view.ThreadSafeLogger;
 
 //-----------------------------------------------------------------------------
@@ -44,11 +267,6 @@ public class Notcher extends Remote{
 
     int runtimePacketSize;
 
-    int pktID;
-    boolean reSynced;
-    int reSyncCount = 0, reSyncPktID;
-    int timeOutWFP = 0; //used by processDataPackets
-
     //Commands for Notcher units
     //These should match the values in the code for those boards.
 
@@ -57,8 +275,13 @@ public class Notcher extends Remote{
     static byte CUT_MODE_CMD = 2;
     static byte ZERO_DEPTH_CMD = 3;
     static byte ZERO_TARGET_DEPTH_CMD = 4;
-    static byte GET_DATA_PACKET_CMD = 5;
+    static byte GET_RUN_PACKET_CMD = 5;
+
+    // add more commands here -- do not remove this comment
     
+    static byte ACK_CMD = 122;
+    static byte TEST_SET_VALUE_CMD = 123;
+    static byte TEST_PACKET_CMD = 124;
     static byte ERROR = 125;
     static byte DEBUG_CMD = 126;
     static byte EXIT_CMD = 127;
@@ -123,6 +346,7 @@ void configure(IniFile pConfigFile)
         
     inBuffer = new byte[RUNTIME_PACKET_SIZE];
     outBuffer = new byte[RUNTIME_PACKET_SIZE];
+    outBufScratch = new byte[RUNTIME_PACKET_SIZE];
 
 }//end of Notcher::configure
 //-----------------------------------------------------------------------------
@@ -215,41 +439,45 @@ public void initialize()
 //-----------------------------------------------------------------------------
 // Notcher::processOneDataPacket
 //
-// This function processes a single data packet if it is available.  If
-// pWaitForPkt is true, the function will wait until data is available.
+// This function processes a single data packet if it is available.
 //
 // The amount of time the function is to wait for a packet is specified by
 // pTimeOut.  Each count of pTimeOut equals 10 ms.
+//
+// Waits for a packet for at least the specified pTimeOut. For no waiting,
+// pass pTimeOut to 0...if no packet is available will return immediately.
 //
 // This function should be called often to allow processing of data packets
 // received from the remotes and stored in the socket buffer.
 //
 // All packets received from the remote devices should begin with
-// 0xaa, 0x55, 0xbb, 0x66, followed by the packet identifier, the DSP chip
-// identifier, and the DSP core identifier.
+// 0xaa, 0x55, 0xbb, 0x66, followed by the packet identifier (usually the
+// command used by the host to request the packet).
 //
 // Returns number of bytes retrieved from the socket, not including the
-// 4 header bytes, the packet ID, the DSP chip ID, and the DSP core ID.
+// 4 header bytes, the packet ID.
+//
 // Thus, if a non-zero value is returned, a packet was processed.  If zero
 // is returned, some bytes may have been read but a packet was not successfully
 // processed due to missing bytes or header corruption.
-// A return value of -1 means that the buffer does not contain a packet.
+//
+// A return value of -1 means that the buffer does not contain a packet and a
+// timeout has occurred.
 //
 
 @Override
-public int processOneDataPacket(boolean pWaitForPkt, int pTimeOut)
+public int processOneDataPacket(int pTimeOut)
 {
 
-    if (byteIn == null) {return -1;}  //do nothing if the port is closed
+    if (byteIn == null) {
+        return -1;
+    }  //do nothing if the port is closed
 
     try{
 
-        //wait a while for a packet if parameter is true
-        if (pWaitForPkt){
-            timeOutWFP = 0;
-            while(byteIn.available() < 5 && timeOutWFP++ < pTimeOut){
-                waitSleep(10);
-            }
+        int timeOutWFP = 0;
+        while(byteIn.available() < 5 && timeOutWFP++ < pTimeOut){
+            waitSleep(10);
         }
 
         //wait until 5 bytes are available - this should be the 4 header bytes,
@@ -287,14 +515,20 @@ public int processOneDataPacket(boolean pWaitForPkt, int pTimeOut)
         //read in the packet identifier
         byteIn.read(inBuffer, 0, 1);
 
+        lastPacketTypeHandled = inBuffer[0];
+        
         //store the ID of the packet (the packet type)
         pktID = inBuffer[0];
 
-        if (pktID == GET_DATA_PACKET_CMD) {return readBytes(2);}
+        if (pktID == ACK_CMD) {return handleACKPacket();}
         else
-        if (pktID == CUT_MODE_CMD){return readBytes(2);}
-        
-        // add more commands here
+        if (pktID == GET_RUN_PACKET_CMD) {return readBytes(2);}  //wip hss -- call function to handle this instead of the return
+        else
+        if (pktID == CUT_MODE_CMD){return readBytes(2);} //wip hss -- call function to handle this instead of the return
+        else 
+        if (pktID == TEST_SET_VALUE_CMD){return handleTestSetValuePacket();}
+
+        // add more commands here -- do not remove this comment
 
     }
     catch(IOException e){
@@ -304,52 +538,6 @@ public int processOneDataPacket(boolean pWaitForPkt, int pTimeOut)
     return 0;
 
 }//end of Notcher::processOneDataPacket
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Notcher::reSync
-//
-// Clears bytes from the socket buffer until 0xaa byte reached which signals
-// the *possible* start of a new valid packet header or until the buffer is
-// empty.
-//
-// If an 0xaa byte is found, the flag reSynced is set true to that other
-// functions will know that an 0xaa byte has already been removed from the
-// stream, signalling the possible start of a new packet header.
-//
-// There is a special case where a 0xaa is found just before the valid 0xaa
-// which starts a new packet - the first 0xaa is the last byte of the previous
-// packet (usually the checksum).  In this case, the next packet will be lost
-// as well.  This should happen rarely.
-//
-
-public void reSync()
-{
-
-    reSynced = false;
-
-    //track the number of times this function is called, even if a resync is not
-    //successful - this will track the number of sync errors
-    reSyncCount++;
-
-    //store info pertaining to what preceded the reSync - these values will be
-    //overwritten by the next reSync, so they only reflect the last error
-    //NOTE: when a reSync occurs, these values are left over from the PREVIOUS good
-    // packet, so they indicate what PRECEDED the sync error.
-
-    reSyncPktID = pktID;
-
-    try{
-        while (byteIn.available() > 0) {
-            byteIn.read(inBuffer, 0, 1);
-            if (inBuffer[0] == (byte)0xaa) {reSynced = true; break;}
-        }
-    }
-    catch(IOException e){
-        logSevere(e.getMessage() + " - Error: 847");
-    }
-
-}//end of Notcher::reSync
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -429,6 +617,102 @@ public void zeroTargetDepth()
     sendBytes(ZERO_TARGET_DEPTH_CMD, (byte) 0);
     
 }//end of Notcher::zeroDepthCount
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Notcher::handleACKPacket
+//
+// Handles ACK packets received from the remote.
+//
+// Returns the number of bytes read from the socket.
+//
+
+public int handleACKPacket()
+{
+
+    int status = readBlockAndVerify(1, ACK_CMD);
+
+    //on error reading and verifying, return the error code
+    if (status == -1){ return(status); }
+       
+    //store the packet type to which this ACK is responding
+    lastPacketTypeAcked = inBuffer[0];
+    
+    return(status);
+        
+}//end of Notcher::handleACKPacket
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Notcher::handleTestSetValuePacket
+//
+// Handles ACK packets received from the remote.
+//
+// Returns the number of bytes read from the socket.
+//
+
+public int handleTestSetValuePacket()
+{
+
+    readBlockAndVerify(2, ACK_CMD);
+    
+    return(2);
+    
+}//end of Notcher::handleTestSetValuePacket
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Notcher::sendTestSetValueCmd
+//
+// Example code set for TEST_SET_VALUE_CMD command.
+//      DO NOT DELETE THIS METHOD
+//
+// Search this class and NotcherSimulator class for "TEST_SET_VALUE_CMD" for
+// all related code and info.
+//
+// Sends a byte and an integer to the remote waits for the response packet.
+//
+// Returns true on success, false on failure.
+//
+
+public boolean sendTestSetValueCmd(byte pByte, int pIntValue)
+{
+    
+    //the values are unpacked into bytes and stored in outBufScratch
+    //outBufScrIndex is used to load the array, start at position 0
+    
+    outBufScrIndex = 0;
+    
+    outBufScratch[outBufScrIndex++] = TEST_SET_VALUE_CMD;
+    
+    //the byte is placed right here in this method
+    outBufScratch[outBufScrIndex++] = pByte;
+    
+    //use method to unpack the integer into the scratch buffer
+    unpackInt(pIntValue, outBufScratch);
+    
+    //send header, the data, and checksum
+    sendByteArray(outBufScrIndex, outBufScratch);
+
+    //reset so we can check ACK to see if it was for this packet
+    lastPacketTypeAcked = NO_ACTION;
+    
+    //process all packets until ACK packet found, waiting up to 1 sec
+    processDataPacketsUntilSpecifiedType(ACK_CMD, 100);
+    
+    if (lastPacketTypeAcked != TEST_SET_VALUE_CMD){
+     
+        //ACK packet for this command not received handle error here
+        //calling function can loop until this method returns true or the
+        //error can be ignored
+  
+        return(false);
+        
+    }
+    
+    return(true);
+    
+}//end of Notcher::sendTestSetValueCmd
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

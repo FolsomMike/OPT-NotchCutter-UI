@@ -13,6 +13,9 @@
 * An Ethernet socket is then opened to establish a link to all devices in the
 * list.
 * 
+* Program Flow and Adding New Functionality
+* 
+* 
 * Open Source Policy:
 *
 * This source code is Public Domain and free to any interested party.  Any
@@ -239,12 +242,6 @@ private void connectNotchers(NetworkInterface pNetworkInterface)
 
     //initialize each Control board
     initializeNotchers();
-
-    //debug mks
-    int x = signed2BytesToInt((byte)0x80, (byte)0x00);
-    int y = unSigned2BytesToInt((byte)0x80, (byte)0x00);
-    int z = signed4BytesToInt((byte)0x80, (byte)0x00, (byte)0x00, (byte)0x00);
-    //debug mks
     
 }//end of NotcherHandler::connectNotchers
 //-----------------------------------------------------------------------------
@@ -494,6 +491,27 @@ private void initializeNotchers()
     }
 
 }//end of NotcherHandler::initializeNotchers
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::handleNewData
+//
+// Displays, processes, or stores new data collected from the packets received
+// from the remotes.
+//
+// Should be called periodically by an Event Dispatch Thread Timer.
+//
+
+public void handleNewData()
+{
+
+    //call the various getters in each Notcher to retrieve the values
+    
+    //call the various View methods to display the values as required
+    
+    //call the various Model methods to save the values as required
+
+}//end of NotcherHandler::handleNewData
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -776,6 +794,21 @@ public Notcher findUnitByIP(String pIP)
     return(null);
     
 }//end of NotcherHandler::findUnitByIP
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherHandler::getNotcher
+//
+// Returns a reference to the Notcher in the array at position pIndex.
+//
+
+public Notcher getNotcher(int pIndex)
+{
+
+    return(notchers[pIndex]);
+
+}//end of NotcherHandler::getNotcher
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // NotcherHandler::getSimulate
