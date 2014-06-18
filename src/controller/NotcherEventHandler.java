@@ -109,11 +109,6 @@ public void init()
     
     notcherUI = createNotcherUI();
 
-    //debug mks
-    notcher.sendTestSetValueCmd((byte)0xaa, 0x12345678);
-    notcher.sendTestSetValueCmd((byte)0xbb, -1);
-    //debug mks
-
 }// end of NotcherEventHandler::init
 //-----------------------------------------------------------------------------
 
@@ -181,12 +176,43 @@ public void actionPerformed(ActionEvent e)
                                                         (e.getActionCommand())){
         notcherUI.disposeChangeNameDialog();
     }
+    
+    if ("Change status of electrode power".equals(e.getActionCommand())){
+        changeElectrodePowerState();
+    }
+    
 
 }//end of NotcherEventHandler::actionPerformed
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Controller::stateChanged
+// NotcherEventHandler::changeElectrodePowerState
+//
+// Goes through the process of changing the electrode power state and sending
+// the value to the notcher.
+// Displays an error message if the sending of the data failed.
+//
+
+public void changeElectrodePowerState(){
+
+    boolean success;
+    
+    if (notcherUI.getElectrodePowerBtnState()) {
+        success = notcher.sendElectrodePowerOnOffCmd(Notcher.ON);
+    }
+    else {
+        success = notcher.sendElectrodePowerOnOffCmd(Notcher.OFF);
+    }
+    
+    if (success) { notcherUI.changeElectrodePowerButtonLabelAndTip(); }
+    else { notcherUI.displayErrorMessage("The program failed to set the "
+                            + "electrode power state of the notcher unit."); }
+
+}//end of NotcherEventHandler::changeElectrodePowerState
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherEventHandler::stateChanged
 //
     
 @Override
@@ -254,7 +280,7 @@ public void stateChanged(ChangeEvent ce)
         
     }
         
-}//end of Controller::stateChanged
+}//end of NotcherEventHandler::stateChanged
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

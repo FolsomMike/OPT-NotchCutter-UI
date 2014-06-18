@@ -277,24 +277,29 @@ public class Notcher extends Remote{
 
     int runtimePacketSize;
 
+    //misc constants
+    public static final byte OFF = 0;
+    public static final byte ON = 1;
+    
     //Commands for Notcher units
     //These should match the values in the code for those boards.
 
-    static byte NO_ACTION = 0;
-    static byte STOP_MODE_CMD = 1;
-    static byte CUT_MODE_CMD = 2;
-    static byte ZERO_DEPTH_CMD = 3;
-    static byte ZERO_TARGET_DEPTH_CMD = 4;
-    static byte GET_RUN_PACKET_CMD = 5;
+    static final byte NO_ACTION = 0;
+    static final byte STOP_MODE_CMD = 1;
+    static final byte CUT_MODE_CMD = 2;
+    static final byte ZERO_DEPTH_CMD = 3;
+    static final byte ZERO_TARGET_DEPTH_CMD = 4;
+    static final byte GET_RUN_PACKET_CMD = 5;
+    static final byte ELECTRODE_SUPPLY_ON_OFF_CMD = 6;
 
     // add more commands here -- do not remove this comment
     
-    static byte ACK_CMD = 122;
-    static byte TEST_SET_VALUE_CMD = 123;
-    static byte TEST_PACKET_CMD = 124;
-    static byte ERROR = 125;
-    static byte DEBUG_CMD = 126;
-    static byte EXIT_CMD = 127;
+    static final byte ACK_CMD = 122;
+    static final byte TEST_SET_VALUE_CMD = 123;
+    static final byte TEST_PACKET_CMD = 124;
+    static final byte ERROR = 125;
+    static final byte DEBUG_CMD = 126;
+    static final byte EXIT_CMD = 127;
     
     //Status Codes for Notcher units
     //These should match the values in the code for those boards.
@@ -642,7 +647,7 @@ public int handleACKPacket()
 
     //on error reading and verifying, return the error code
     if (status == -1){ return(status); }
-       
+    
     //store the packet type to which this ACK is responding
     lastPacketTypeAcked = inBuffer[0];
     
@@ -703,6 +708,53 @@ public boolean sendTestSetValueCmd(byte pByte, int pIntValue)
     return(true);
     
 }//end of Notcher::sendTestSetValueCmd
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Notcher::sendElectrodePowerOnOffCmd
+//
+// Sends an electorde power ON or OFF command to the notcher.
+//
+// Sends a byte to the remote waits for the response packet.
+//
+// Returns true on success, false on failure.
+//
+
+public boolean sendElectrodePowerOnOffCmd(byte pState)
+{
+    
+    //the values are unpacked into bytes and stored in outBufScratch
+    
+    //outBufScrIndex is used to load the array, start at position 0
+    outBufScrIndex = 0;
+    
+    outBufScratch[outBufScrIndex++] = ELECTRODE_SUPPLY_ON_OFF_CMD ;
+    
+    //the byte is placed right here in this method
+    outBufScratch[outBufScrIndex++] = pState;
+    
+    //send header, the data, and checksum
+    sendByteArray(outBufScrIndex, outBufScratch);
+
+    //reset so we can check ACK to see if it was for this packet
+    lastPacketTypeAcked = NO_ACTION;
+    
+    //process all packets until ACK packet found, waiting up to 1 sec
+    processDataPacketsUntilSpecifiedType(ACK_CMD, 100);
+    
+    if (lastPacketTypeAcked != ELECTRODE_SUPPLY_ON_OFF_CMD){
+     
+        //ACK packet for this command not received handle error here
+        //calling function can loop until this method returns true or the
+        //error can be ignored
+  
+        return(false);
+        
+    }
+    
+    return(true);
+    
+}//end of Notcher::sendElectrodePowerOnOffCmd
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

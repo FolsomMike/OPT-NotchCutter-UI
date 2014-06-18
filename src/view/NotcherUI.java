@@ -43,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import toolkit.Tools;
@@ -72,6 +73,8 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
     private JLabel nameValueLabel;
     
     private JButton sendTargetDepthBtn;
+    
+    private JToggleButton electrodePowerOnOffBtn;
     
     // hss wip -- set to private and create a getter
     public LEDGroup voltageLeds, currentLeds;
@@ -576,13 +579,14 @@ public JPanel createVoltagePanel()
     panel.add(voltageLeds);
     
     //add a button
-    JButton voltageStatusBtn = new JButton("Voltage is on" );
-    voltageStatusBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    voltageStatusBtn.setActionCommand("Change status of voltage");
-    voltageStatusBtn.addActionListener(this);
-    voltageStatusBtn.setToolTipText("Turn voltage off");
-    Tools.setSizes(voltageStatusBtn, 105, 20);
-    panel.add(voltageStatusBtn);
+    electrodePowerOnOffBtn = new JToggleButton("Electrode Power is off");
+    electrodePowerOnOffBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    electrodePowerOnOffBtn.setActionCommand("Change status of electrode power");
+    electrodePowerOnOffBtn.addActionListener(this);
+    electrodePowerOnOffBtn.setToolTipText("Turn electrode power on");
+    Tools.setSizes(electrodePowerOnOffBtn, 155, 20);
+    electrodePowerOnOffBtn.setSelected(false);
+    panel.add(electrodePowerOnOffBtn);
     
     return panel;
     
@@ -960,6 +964,38 @@ public void changeNotcherName()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// NotcherUI::changeElectrodePowerButtonLabelAndTip
+//
+// Changes the electrode power button and tool tip text according to the state 
+// of the button.
+//
+
+public void changeElectrodePowerButtonLabelAndTip(){
+    
+    if (getElectrodePowerBtnState()) {
+        electrodePowerOnOffBtn.setText("Electrode Power is on");
+        electrodePowerOnOffBtn.setToolTipText("Turn electrode power off");
+    }
+    else {
+        electrodePowerOnOffBtn.setText("Electrode Power is off");
+        electrodePowerOnOffBtn.setToolTipText("Turn electrode power on");
+    }
+        
+}// end of NotcherUI::changeElectrodePowerButtonLabelAndTip
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::getElectrodePowerBtnState
+
+public boolean getElectrodePowerBtnState() {
+    
+    if (electrodePowerOnOffBtn.isSelected()) { return (true); }
+    else { return (false); }   
+
+}// end of NotcherUI::getElectrodePowerBtnState
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // NotcherUI::disposeChangeNameDialog
 //
 // Disposes of the changeNameDialog.
@@ -1031,6 +1067,21 @@ public void centerJDialog(JDialog pDialog, JFrame pParentFrame)
     pDialog.setLocation(xPosition, yPosition);
 
 }// end of NotcherUI::centerJDialog
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// NotcherUI::displayErrorMessage
+//
+// Displays an error dialog with message pMessage.
+//
+
+public void displayErrorMessage(String pMessage)
+{
+
+    JOptionPane.showMessageDialog(mainFrame, pMessage,
+                                            "Error", JOptionPane.ERROR_MESSAGE);
+
+}//end of NotcherUI::displayErrorMessage
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

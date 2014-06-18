@@ -152,7 +152,7 @@ public void setIPAddr(InetAddress pIPAddr)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Notcher::reSync
+// Remote::reSync
 //
 // Clears bytes from the socket buffer until 0xaa byte reached which signals
 // the *possible* start of a new valid packet header or until the buffer is
@@ -194,7 +194,7 @@ public void reSync()
         logSevere(e.getMessage() + " - Error: 847");
     }
 
-}//end of Notcher::reSync
+}//end of Remote::reSync
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
