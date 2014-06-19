@@ -644,7 +644,21 @@ public JPanel createHeadPanel()
     outerPanel.add(panel);
     
     //vertical spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(0,10)));
+    //two panels are used so that a line can be placed in the middle of the
+    //spacer -- MatteBorder is used
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(panel, 300, 6);
+    panel.setBorder(BorderFactory.createMatteBorder
+                                                    (0, 0, 1, 0, Color.GRAY));
+    outerPanel.add(panel);
+    
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(panel, 0, 5);
+    outerPanel.add(panel);
     
     // add a containing JPanel
     panel = new JPanel();
@@ -729,7 +743,7 @@ public JPanel createCutDepthInputSpinner()
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     //create a label
-    JLabel cutDepthLbl = new JLabel("Cut Depth: ");
+    JLabel cutDepthLbl = new JLabel("Target Cut Depth: ");
     cutDepthLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
     cutDepthLbl.setToolTipText("");
     outerPanel.add(cutDepthLbl);
@@ -739,8 +753,9 @@ public JPanel createCutDepthInputSpinner()
     MFloatSpinner cutDepthInputSpinner = new MFloatSpinner(5.5, 1.1, 9.9, 0.1, 
                                                             "##0.0", 60, 20);
     cutDepthInputSpinner.addChangeListener(this);
-    cutDepthInputSpinner.setName("Cut Depth Input Spinner");
-    cutDepthInputSpinner.setToolTipText("Use this to edit the cut depth");
+    cutDepthInputSpinner.setName("Cut Depth Input Spinner -- target depth");
+    cutDepthInputSpinner.setToolTipText
+                                ("Set the target cut depth of the notcher");
     cutDepthInputSpinner.setAlignmentX(Component.LEFT_ALIGNMENT);
     outerPanel.add(cutDepthInputSpinner);
     
