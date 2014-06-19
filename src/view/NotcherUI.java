@@ -26,6 +26,7 @@ import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -174,7 +175,7 @@ public void setupGui()
     outerPanel.add(panel);
     
     //vertical spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(0,20)));
+    outerPanel.add(Box.createRigidArea(new Dimension(0,15)));
     
     // add a containing JPanel
     panel = new JPanel();
@@ -218,7 +219,7 @@ public JPanel createHeaderPanel()
     outerPanel.add(panel);
     
     //horizontal spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(40, 0)));
+    outerPanel.add(Box.createRigidArea(new Dimension(10, 0)));
     
     // add a containing JPanel
     panel = new JPanel();
@@ -247,7 +248,7 @@ public JPanel createNamePanel()
     JPanel outerPanel = new JPanel();
     JPanel panel;
     
-    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // add a containing JPanel
@@ -255,21 +256,16 @@ public JPanel createNamePanel()
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(createNameAndNameValueLabels());
-    outerPanel.add(panel);
-    
-    // add a containing JPanel
-    panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     //horizontal spacer
-    panel.add(Box.createRigidArea(new Dimension(45, 0)));
+    panel.add(Box.createRigidArea(new Dimension(4, 0)));
     //add a button
     JButton changeNameBtn = new JButton("Change");
     changeNameBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
     changeNameBtn.setActionCommand("Change name of unit");
     changeNameBtn.addActionListener(this);
     changeNameBtn.setToolTipText("Change the name of this unit");
-    Tools.setSizes(changeNameBtn, 80, 20);
+    changeNameBtn.setMargin(new Insets(0, 0, 0, 0));
+    Tools.setSizes(changeNameBtn, 50, 20);
     panel.add(changeNameBtn);
     outerPanel.add(panel);
     
@@ -294,7 +290,7 @@ public JPanel createNameAndNameValueLabels()
     // add a containing JPanel to place the labels next to each other
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    Tools.setSizes(panel, 250, 20);
+    Tools.setSizes(panel, 225, 20);
     
     // create a label to display the name of the notcher
     JLabel nameLabel = new JLabel("Name: ");
@@ -425,14 +421,15 @@ public JPanel createStatusPanel()
     panel = new JPanel();
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    //horizontal spacer
-    panel.add(Box.createRigidArea(new Dimension(20, 0)));
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     // add power status objects to panel
     panel.add(createPowerStatusPanel());
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     outerPanel.add(panel);
-    
-    //vertical spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(0, 10)));
     
     // add a containing JPanel
     panel = new JPanel();
@@ -556,11 +553,17 @@ public JPanel createCurrentPanel()
 public JPanel createVoltagePanel()
 {
  
+    JPanel outerPanel;
     JPanel panel;
+    
+    // add a containing JPanel
+    outerPanel = new JPanel();
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // create a containing JPanel
     panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     voltageLeds = new LEDGroup("Voltage", LEDGroup.BORDER_TITLE, 10, 20, 10, 0, 
@@ -569,7 +572,19 @@ public JPanel createVoltagePanel()
     voltageLeds.setRange(0, 10);
     voltageLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(voltageLeds);
+    outerPanel.add(panel);
     
+    //vertical spacer
+    outerPanel.add(Box.createRigidArea(new Dimension(0, 3)));
+    
+    // create a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     //add a button
     electrodePowerOnOffBtn = new JToggleButton("Electrode Power is Off");
     electrodePowerOnOffBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -579,8 +594,13 @@ public JPanel createVoltagePanel()
     Tools.setSizes(electrodePowerOnOffBtn, 160, 20);
     electrodePowerOnOffBtn.setSelected(false);
     panel.add(electrodePowerOnOffBtn);
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     
-    return panel;
+    outerPanel.add(panel);
+    
+    return outerPanel;
     
 }// end of NotcherUI::createVoltagePanel
 //-----------------------------------------------------------------------------
@@ -615,9 +635,6 @@ public JPanel createHeadPanel()
     // create a filler to "push" everything in this panel to the center -- only
     // works to "push" to the center if another glue is used
     panel.add(Box.createHorizontalGlue());
-    
-    //horizontal spacer
-    panel.add(Box.createRigidArea(new Dimension(10,0)));
     
     //create a label to display the head's current cutting position
     panel.add(createCuttingHeadPositionSpinner());
@@ -866,7 +883,7 @@ public JPanel createChangeNameTextField()
     panel.add(Box.createHorizontalGlue());
     
     //add text field
-    changeNameTextField = new JTextField("Enter new name...");
+    changeNameTextField = new JTextField(notcherName);
     changeNameTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
     changeNameTextField.selectAll();
     Tools.setSizes(changeNameTextField, 175, 24);
@@ -909,7 +926,7 @@ public JPanel createChangeNameApplyAndCancelButtons()
     //hsswipp// use keyEvent so that you don't need to press 'alt'
     applyNewNameBtn.setMnemonic(KeyEvent.VK_ENTER);
     applyNewNameBtn.addActionListener(this);
-    applyNewNameBtn.setToolTipText("Apply this name to " + notcherName);
+    applyNewNameBtn.setToolTipText("Use this name for the unit");
     panel.add(applyNewNameBtn);
     
     //horizontal spacer
@@ -923,7 +940,7 @@ public JPanel createChangeNameApplyAndCancelButtons()
                         ("Cancel the process of changing the name of the unit");
     cancelBtn.addActionListener(this);
     cancelBtn.setToolTipText
-                ("Cancel the process of changing the name of " + notcherName);
+                ("Cancel");
     panel.add(cancelBtn);
     
     // create a filler to "push" everything in this panel to the center -- only
@@ -950,13 +967,8 @@ public void changeNotcherName()
     notcherName = changeNameTextField.getText();
     
     //reset various items that use the notcherName
-    changeNameDialog.setTitle("Change the Name of: " + notcherName);
     nameValueLabel.setText(notcherName);
     notcherSettings.setNames(notcherName);
-    
-    String message = "The name of '" + previousNotcherName + "'" +
-                        " has been changed to '" + notcherName + "'.";
-    JOptionPane.showMessageDialog(mainFrame, message);
     
     disposeChangeNameDialog();
 
