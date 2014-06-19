@@ -571,12 +571,12 @@ public JPanel createVoltagePanel()
     panel.add(voltageLeds);
     
     //add a button
-    electrodePowerOnOffBtn = new JToggleButton("Electrode Power is off");
+    electrodePowerOnOffBtn = new JToggleButton("Electrode Power is Off");
     electrodePowerOnOffBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
     electrodePowerOnOffBtn.setActionCommand("Change status of electrode power");
     electrodePowerOnOffBtn.addActionListener(this);
     electrodePowerOnOffBtn.setToolTipText("Turn electrode power on");
-    Tools.setSizes(electrodePowerOnOffBtn, 155, 20);
+    Tools.setSizes(electrodePowerOnOffBtn, 160, 20);
     electrodePowerOnOffBtn.setSelected(false);
     panel.add(electrodePowerOnOffBtn);
     
@@ -980,11 +980,11 @@ public void changeNotcherName()
 public void changeElectrodePowerButtonLabelAndTip(){
     
     if (getElectrodePowerBtnState()) {
-        electrodePowerOnOffBtn.setText("Electrode Power is on");
+        electrodePowerOnOffBtn.setText("Electrode Power is On");
         electrodePowerOnOffBtn.setToolTipText("Turn electrode power off");
     }
     else {
-        electrodePowerOnOffBtn.setText("Electrode Power is off");
+        electrodePowerOnOffBtn.setText("Electrode Power is Off");
         electrodePowerOnOffBtn.setToolTipText("Turn electrode power on");
     }
         
