@@ -78,7 +78,7 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
     
     // hss wip -- set to private and create a getter
     public LEDGroup voltageLeds, currentLeds;
-    private LEDGroup powerOKLed, shortLed;
+    private LEDGroup powerLed, shortLed;
     
     // hsswip -- name should be set elswhere
     private String notcherName = "NotcherUI";
@@ -301,8 +301,8 @@ public JPanel createNameAndNameValueLabels()
     nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
     // gets the current font of the label
     font = nameLabel.getFont();
-    // creates a new font with the same font type and size as the label already 
-    // has but with bold
+    // creates a new font with the same font type and size that the label 
+    // already has and then makes the font bold
     newFont = new Font(font.getFontName(), Font.BOLD, 15);
     nameLabel.setFont(newFont);
     nameLabel.setToolTipText("This notcher is named: " + notcherName);
@@ -425,17 +425,13 @@ public JPanel createStatusPanel()
     panel = new JPanel();
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    // create a filler to "push" everything in this panel to the center -- only
-    // works to "push" to the center if another glue is used
-    panel.add(Box.createHorizontalGlue());
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(20, 0)));
     // add power status objects to panel
     panel.add(createPowerStatusPanel());
-    // create a filler to "push" everything in this panel to the center -- only
-    // works to "push" to the center if another glue is used
-    panel.add(Box.createHorizontalGlue());
     outerPanel.add(panel);
     
-    //horizontal spacer
+    //vertical spacer
     outerPanel.add(Box.createRigidArea(new Dimension(0, 10)));
     
     // add a containing JPanel
@@ -494,14 +490,13 @@ public JPanel createPowerStatusPanel()
     // create a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    // add an led for the PowerOK status
-    powerOKLed = new LEDGroup("PowerOK", 1, 15, 15, 0, 55, 10, Color.GREEN, 
-                   panel.getBackground());
-    powerOKLed.init();
-    powerOKLed.setAlignmentX(Component.LEFT_ALIGNMENT);
-    panel.add(powerOKLed);
+    // add an led for the Power status
+    powerLed = new LEDGroup("Power", LEDGroup.SIDE_BY_SIDE, 1, 15, 15, 0, 0, 
+                                        0, Color.GREEN, panel.getBackground());
+    powerLed.init();
+    //powerLed.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.add(powerLed);
     outerPanel.add(panel);
     
     //horizontal spacer
@@ -510,13 +505,13 @@ public JPanel createPowerStatusPanel()
     // create a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    //panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // add an led for the Short status
-    shortLed = new LEDGroup("Short", 1, 15, 15, 0, 30, 10, Color.RED, 
-                   panel.getBackground());
+    shortLed = new LEDGroup("Short", LEDGroup.SIDE_BY_SIDE, 1, 15, 15, 0, 0, 
+                                        0, Color.RED, panel.getBackground());
     shortLed.init();
-    shortLed.setAlignmentX(Component.LEFT_ALIGNMENT);
+    //shortLed.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(shortLed);
     outerPanel.add(panel);
     
@@ -542,8 +537,8 @@ public JPanel createCurrentPanel()
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    currentLeds = new LEDGroup("Current", 10, 20, 10, 0, 16, 10, Color.RED, 
-                                getBackground()); 
+    currentLeds = new LEDGroup("Current", LEDGroup.BORDER_TITLE, 10, 20, 10, 0, 
+                                            16, 10, Color.RED, getBackground()); 
     currentLeds.init();
     currentLeds.setRange(0, 10);
     currentLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -571,8 +566,8 @@ public JPanel createVoltagePanel()
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    voltageLeds = new LEDGroup("Voltage", 10, 20, 10, 0, 16, 10, Color.GREEN, 
-                                getBackground()); 
+    voltageLeds = new LEDGroup("Voltage", LEDGroup.BORDER_TITLE, 10, 20, 10, 0, 
+                                        16, 10, Color.GREEN, getBackground()); 
     voltageLeds.init();
     voltageLeds.setRange(0, 10);
     voltageLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -651,7 +646,7 @@ public JPanel createHeadPanel()
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     Tools.setSizes(panel, 300, 6);
     panel.setBorder(BorderFactory.createMatteBorder
-                                                    (0, 0, 1, 0, Color.GRAY));
+                                                (0, 0, 1, 0, Color.LIGHT_GRAY));
     outerPanel.add(panel);
     
     panel = new JPanel();

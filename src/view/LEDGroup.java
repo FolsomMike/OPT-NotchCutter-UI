@@ -18,9 +18,12 @@ package view;
 //-----------------------------------------------------------------------------
 
 import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.awt.Component;
+import java.awt.Dimension;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import toolkit.Tools;
 
@@ -33,20 +36,25 @@ public class LEDGroup extends JPanel{
     
     private LED[] ledArray;
     
-    private Color onColor;
-    private Color offColor;
+    private final Color onColor;
+    private final Color offColor;
     
-    private String title;
+    private final String title;
+    
+    private final int displayType;
+    //ADD DISPLAY TYPES HERE
+    public static final int BORDER_TITLE = 1;
+    public static final int SIDE_BY_SIDE = 2;
     
     private static final int Y_OFFSET = 20;
     private static final int Y_PADDING = 10;
     
-    private int xOffset;
-    private int xPadding;
-    private int xGap;
+    private final int xOffset;
+    private final int xPadding;
+    private final int xGap;
     
-    private int ledArrayLength;
-    private int ledWidth, ledHeight;
+    private final int ledArrayLength;
+    private final int ledWidth, ledHeight;
     private int highestLitLedIndex;
     
     private double stepValue;
@@ -58,12 +66,13 @@ public class LEDGroup extends JPanel{
 // LEDGroup::LEDGroup (constructor)
 //
 
-public LEDGroup(String pTitle, int pLedArrayLength, int pLedWidth,
-                    int pLedHeight, int pXOffset, int pXPadding, int pXGap, 
-                    Color pOnColor, Color pOffColor)
+public LEDGroup(String pTitle, int pDisplayType, int pLedArrayLength, 
+                    int pLedWidth, int pLedHeight, int pXOffset, int pXPadding, 
+                    int pXGap, Color pOnColor, Color pOffColor)
 {
     
     title = pTitle;
+    displayType = pDisplayType;
     ledArrayLength = pLedArrayLength;
     ledWidth = pLedWidth;
     ledHeight = pLedHeight;
@@ -86,68 +95,163 @@ public LEDGroup(String pTitle, int pLedArrayLength, int pLedWidth,
 public void init()
 {
     
-    determineAndSetSize();
+    this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+    this.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    createLeds();
-    
-    setBorder();
+    setUpDisplayType();
     
 }// end of LEDGroup::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// LEDGroup::determineAndSetSize
+// LEDGroup::setUpDisplayType
 //
-// Determines the size the component needs to be to show all of the leds.
+// Determines in what way to display the LEDGroup depending on the displayType.
 //
-// The size is based on:
-//      the number of leds
-//      size of the leds
-//      amount of space between the leds
-//      X and Y offsets
-//      X and Y padding
+// For each display type you add, you need to search for 
+// "ADD DISPLAY TYPES HERE" and add a constant with an appropriate variable 
+// name -- following the format in which the others were created. Then, you 
+// need to add another case (to the switch in this function) that executes the
+// proper code when your display type was passed in through the constructor.
 //
 
-public void determineAndSetSize()
+public void setUpDisplayType()
 {
     
-    // hss whip
+    switch (displayType) {
+        case BORDER_TITLE:
+            doActionsForBorderTitleDisplayType();
+            break;
+            
+        case SIDE_BY_SIDE:
+            doActionsForSideBySideDisplayType();
+            break;
+    }
     
-    int width = xOffset + xPadding + xGap * (ledArrayLength - 1) + 
-                    ledWidth * ledArrayLength;
-    
-    int height = Y_OFFSET + Y_PADDING + ledHeight;
-    
-    Tools.setSizes(this, width, height);
-    
-}// end of LEDGroup::determineAndSetSize
+}// end of LEDGroup::setUpDisplayType
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// LEDGroup::createLeds
+// LEDGroup::doActionsForBorderTitleDisplayType
 //
-// Creates an LED object for each index in the ledArray.
+// Performs necessary for the BORDER_TITLE displayType.
 //
 
-public void createLeds()
+public void doActionsForBorderTitleDisplayType()
 {
+    
+    this.add(createLedsPanel());
+    
+    //vertical spacer
+    this.add(Box.createRigidArea(new Dimension(0, 3)));
+    
+    createTitledBorder();
+    
+}// end of LEDGroup::doActionsForBorderTitleDisplayType
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// LEDGroup::createTitledBorder
+//
+// Creates a border for the object (JPanel).
+//
+
+public void createTitledBorder()
+{
+    
+    this.setBorder(BorderFactory.createTitledBorder(
+                            BorderFactory.createLineBorder(Color.black), 
+                            title));
+    
+}// end of LEDGroup::createTitledBorder
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// LEDGroup::doActionsForSideBySideDisplayType
+//
+// Performs necessary for the SIDE_BY_SIDE displayType.
+//
+
+public void doActionsForSideBySideDisplayType()
+{
+    
+    // add a containing JPanel
+    JPanel panel = new JPanel();
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    
+    panel.add(createTitleLabel());
+    
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(5, 0)));
+    
+    panel.add(createLedsPanel());
+    
+    this.add(panel);
+    
+}// end of LEDGroup::doActionsForSideBySideDisplayType
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// LEDGroup::createTitleLabel
+//
+// Creates the title label and adds it the the panel.
+//
+
+public JLabel createTitleLabel()
+{
+    
+    JLabel titleLabel = new JLabel(title);
+    
+    return titleLabel;
+    
+}// end of LEDGroup::createTitleLabel
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// LEDGroup::createLedsPanel
+//
+// Creates an LED object for each index in the ledArray and adds it to a 
+// returned panel.
+// Horizontal spacers are used for the offset and the space between the leds.
+//
+
+public JPanel createLedsPanel()
+{
+    
+    // add a containing JPanel
+    JPanel panel = new JPanel();
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    
+    //the xGap is subtracted because it is added to the panel before the first
+    //led -- counteracts extra spacing
+    int leftSpacerWidth = xOffset + xPadding/2 - xGap;
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(leftSpacerWidth, 0)));
+    
     ledArray = new LED[ledArrayLength];
     
-    int ledXValue;
+    for (LED led : ledArray) {
+        
+        //horizontal spacer
+        panel.add(Box.createRigidArea(new Dimension(xGap, 0)));
+        
+        led = new LED(ledWidth, ledHeight, onColor, offColor);
+        
+        led.init();
+        
+        panel.add(led);
+        
+    }
     
-    for (int i = 0; i < ledArray.length; i++) {
-        
-        ledXValue = xOffset + xPadding/2 + i * (ledWidth + xGap);
-        
-        ledArray[i] = new LED(ledXValue, Y_OFFSET, ledWidth, ledHeight, 
-                                    onColor, offColor);
-        
-        ledArray[i].init();
-        
-    }// end of for (int i = 0; i < ledArray.length; i++)
+    int rightSpacerWidth = xPadding/2;
+    //horizontal spacer
+    panel.add(Box.createRigidArea(new Dimension(rightSpacerWidth, 0)));
     
-}// end of LEDGroup::createLeds
+    return(panel);
+    
+}// end of LEDGroup::createLedsPanel
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -215,8 +319,8 @@ public void setValue(double pInputValue)
 public void setAllLedStatesToRepresentInputValue()
 {
     
-    for (int i = 0; i < ledArray.length; i++) {
-            ledArray[i].setState(LED.OFF);
+    for (LED led : ledArray) {
+        led.setState(LED.OFF);
     }
     
     // if input value is less than lowest step, no leds are lit
@@ -235,51 +339,6 @@ public void setAllLedStatesToRepresentInputValue()
 }// end of LEDGroup::setAllLedStatesToRepresentInputValue
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// LEDGroup::setBorder
-//
-// Creates a border for the panel.
-//
-
-public void setBorder()
-{
-
-    // A "!NO_BORDER!" for a title signifies that there should be no border.
-    if ("!NO_BORDER!".equals(title)){
-        return;
-    }
-    
-    this.setBorder(BorderFactory.createTitledBorder(
-                            BorderFactory.createLineBorder(Color.black), 
-                            title));
-    
-}// end of LEDGroup::setBorder
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// LEDGroup::paintComponent
-//
-// Initializes the object.  Must be called immediately after instantiation.
-//
-
-@Override
-
-public void paintComponent (Graphics g)
-{
-
-    // let the parent class do it's painting, such as the background, border, etc.
-    super.paintComponent(g);
-
-    Graphics2D g2 = (Graphics2D) g;
-
-    // paint all our children
-    for (LED ledArray1 : ledArray) {
-        ledArray1.paint(g2);
-    }
-
-}// end of LEDGroup::paintComponent
-//-----------------------------------------------------------------------------
-    
 }//end of class LEDGroup
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

@@ -17,15 +17,18 @@ package view;
 //-----------------------------------------------------------------------------
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import javax.swing.JPanel;
+import toolkit.Tools;
 
 
 //-----------------------------------------------------------------------------
 // class LED
 //
 
-public class LED extends Object {
+public class LED extends JPanel {
     
     Rectangle2D.Double LED;
     
@@ -34,8 +37,8 @@ public class LED extends Object {
     public static final int OFF = 0, ON = 1;
     
     int ledState;
-    int x, y;
     int ledWidth, ledHeight;
+    int x = 0, y = 0;
     
     Color fillColor;
     Color onColor;
@@ -45,12 +48,10 @@ public class LED extends Object {
 // LED::LED (constructor)
 //
 
-public LED(int pX, int pY, int pLedWidth, int pLedHeight, Color pOnColor, 
+public LED(int pLedWidth, int pLedHeight, Color pOnColor, 
                 Color pOffColor)
 {
     
-    x = pX;
-    y = pY;
     ledWidth = pLedWidth;
     ledHeight = pLedHeight;
     onColor = pOnColor;
@@ -67,6 +68,8 @@ public LED(int pX, int pY, int pLedWidth, int pLedHeight, Color pOnColor,
 
 public void init()
 {
+    
+    Tools.setSizes(this, ledWidth + 1, ledHeight + 1);
     
     fillColor = offColor;
       
@@ -100,16 +103,23 @@ public void setState(int pState)
 // Paints the necessary parts to draw an LED.
 //
 
-public void paint(Graphics2D pG2)
-{
+@Override
+
+public void paintComponent (Graphics g) {
     
-    pG2.setColor(Color.BLACK);
+    //let the parent class do it's painting, such as the background, border, 
+    //etc.
+    super.paintComponent(g);
+
+    Graphics2D g2 = (Graphics2D) g;
     
-    pG2.draw(LEDOutline = new Rectangle2D.Double(x, y, ledWidth, ledHeight));
+    g2.setColor(Color.BLACK);
     
-    pG2.setColor(fillColor);
+    g2.draw(LEDOutline = new Rectangle2D.Double(x, y, ledWidth, ledHeight));
     
-    pG2.fill(LED = new Rectangle2D.Double(x + 1, y + 1, ledWidth - 1, 
+    g2.setColor(fillColor);
+    
+    g2.fill(LED = new Rectangle2D.Double(x + 1, y + 1, ledWidth - 1, 
                                             ledHeight - 1));
     
 }// end of LED::paint
