@@ -30,10 +30,6 @@ import toolkit.Tools;
 
 public class LED extends JPanel {
     
-    Rectangle2D.Double LED;
-    
-    Rectangle2D.Double LEDOutline;
-    
     public static final int OFF = 0, ON = 1;
     
     int ledState;
@@ -48,8 +44,7 @@ public class LED extends JPanel {
 // LED::LED (constructor)
 //
 
-public LED(int pLedWidth, int pLedHeight, Color pOnColor, 
-                Color pOffColor)
+public LED(int pLedWidth, int pLedHeight, Color pOnColor, Color pOffColor)
 {
     
     ledWidth = pLedWidth;
@@ -98,7 +93,7 @@ public void setState(int pState)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// LED::paint
+// LED::paintComponent
 //
 // Paints the necessary parts to draw an LED.
 //
@@ -115,14 +110,13 @@ public void paintComponent (Graphics g) {
     
     g2.setColor(Color.BLACK);
     
-    g2.draw(LEDOutline = new Rectangle2D.Double(x, y, ledWidth, ledHeight));
+    g2.draw(new Rectangle2D.Double(x, y, ledWidth, ledHeight));
     
     g2.setColor(fillColor);
     
-    g2.fill(LED = new Rectangle2D.Double(x + 1, y + 1, ledWidth - 1, 
-                                            ledHeight - 1));
+    g2.fill(new Rectangle2D.Double(x + 1, y + 1, ledWidth - 1, ledHeight - 1));
     
-}// end of LED::paint
+}// end of LED::paintComponent
 //-----------------------------------------------------------------------------
     
 }//end of class LED

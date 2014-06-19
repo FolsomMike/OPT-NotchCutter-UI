@@ -25,7 +25,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import toolkit.Tools;
 
 
 //-----------------------------------------------------------------------------
@@ -232,16 +231,18 @@ public JPanel createLedsPanel()
     
     ledArray = new LED[ledArrayLength];
     
-    for (LED led : ledArray) {
+    for (int i=0; i<ledArray.length; i++) {
         
         //horizontal spacer
         panel.add(Box.createRigidArea(new Dimension(xGap, 0)));
         
-        led = new LED(ledWidth, ledHeight, onColor, offColor);
+        //debug hss//
+        //led = new LED(ledWidth, ledHeight, onColor, offColor);
+        ledArray[i] = new LED(ledWidth, ledHeight, onColor, offColor);
         
-        led.init();
+        ledArray[i].init();
         
-        panel.add(led);
+        panel.add(ledArray[i]);
         
     }
     
@@ -273,6 +274,21 @@ public void setRange(double pMinValue, double pMaxValue)
     stepValue = range / ledArrayLength;
     
 }// end of LEDGroup::setRange
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// LEDGroup::setAllLedsState
+//
+// Sets all of the leds in the ledArray to either their "ON" or  their "OFF" 
+// state depending on the passed in parameter.
+//
+
+public void setAllLedsState(int pState)
+{
+    
+    for (LED led : ledArray) { led.setState(pState); }
+    
+}// end of LEDGroup::setAllLedsState
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
