@@ -616,13 +616,6 @@ public JPanel createHeadPanel()
     // works to "push" to the center if another glue is used
     panel.add(Box.createHorizontalGlue());
     
-    //create a label to display the head's current cutting position
-    // hss wip value for label should be passed in from elsewhere
-    JLabel positionLbl = new JLabel("Postion: " + "0.01");
-    positionLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-    positionLbl.setToolTipText("");
-    panel.add(positionLbl);
-    
     //horizontal spacer
     panel.add(Box.createRigidArea(new Dimension(10,0)));
     
