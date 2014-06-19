@@ -495,7 +495,6 @@ public JPanel createPowerStatusPanel()
     powerLed = new LEDGroup("Power", LEDGroup.SIDE_BY_SIDE, 1, 15, 15, 0, 0, 
                                         0, Color.GREEN, panel.getBackground());
     powerLed.init();
-    //powerLed.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(powerLed);
     outerPanel.add(panel);
     
@@ -505,13 +504,11 @@ public JPanel createPowerStatusPanel()
     // create a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    //panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // add an led for the Short status
     shortLed = new LEDGroup("Short", LEDGroup.SIDE_BY_SIDE, 1, 15, 15, 0, 0, 
                                         0, Color.RED, panel.getBackground());
     shortLed.init();
-    //shortLed.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(shortLed);
     outerPanel.add(panel);
     
@@ -538,7 +535,7 @@ public JPanel createCurrentPanel()
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     currentLeds = new LEDGroup("Current", LEDGroup.BORDER_TITLE, 10, 20, 10, 0, 
-                                            16, 10, Color.RED, getBackground()); 
+                                    16, 10, Color.RED, panel.getBackground()); 
     currentLeds.init();
     currentLeds.setRange(0, 10);
     currentLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -567,7 +564,7 @@ public JPanel createVoltagePanel()
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     voltageLeds = new LEDGroup("Voltage", LEDGroup.BORDER_TITLE, 10, 20, 10, 0, 
-                                        16, 10, Color.GREEN, getBackground()); 
+                                    16, 10, Color.GREEN, panel.getBackground()); 
     voltageLeds.init();
     voltageLeds.setRange(0, 10);
     voltageLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
