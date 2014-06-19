@@ -36,7 +36,7 @@
 
 package controller;
 
-import Hardware.NotcherHandler;
+import Hardware.NotcherGroup;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
@@ -59,7 +59,7 @@ public class Controller implements EventProcessor
 
     private View view;
 
-    private NotcherHandler notcherHandler;
+    private NotcherGroup notcherHandler;
     
     private Options options;
 
@@ -122,7 +122,7 @@ public void init()
 
     view.setupAndStartMainTimer();
     
-    notcherHandler = new NotcherHandler(view.getThreadSafeLogger());
+    notcherHandler = new NotcherGroup(view.getThreadSafeLogger());
     notcherHandler.init();
 
     //connect to Notchers in a background thread
