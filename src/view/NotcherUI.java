@@ -49,7 +49,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import toolkit.Tools;
 
-
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // class NotcherUI
 //
