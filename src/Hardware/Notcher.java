@@ -497,7 +497,7 @@ public int processOneDataPacket(int pTimeOut)
 
         //wait until 5 bytes are available - this should be the 4 header bytes,
         //and the packet identifier
-        if (byteIn.available() < 5) {return -1;}
+        if (byteIn.available() < 5) { return -1; }
 
         //read the bytes in one at a time so that if an invalid byte is
         //encountered it won't corrupt the next valid sequence in the case
@@ -513,12 +513,12 @@ public int processOneDataPacket(int pTimeOut)
 
         //after a resync, the function exits without processing any packets
 
-        if (!reSynced){
+        if (!reSynced) {
             //look for the 0xaa byte unless buffer just resynced
             byteIn.read(inBuffer, 0, 1);
             if (inBuffer[0] != (byte)0xaa) {reSync(); return 0;}
         }
-        else {reSynced = false;}
+        else { reSynced = false; }
 
         byteIn.read(inBuffer, 0, 1);
         if (inBuffer[0] != (byte)0x55) {reSync(); return 0;}
@@ -530,6 +530,7 @@ public int processOneDataPacket(int pTimeOut)
         //read in the packet identifier
         byteIn.read(inBuffer, 0, 1);
 
+        //store the last packet type handled
         lastPacketTypeHandled = inBuffer[0];
         
         //store the ID of the packet (the packet type)
@@ -723,8 +724,6 @@ public boolean sendTestSetValueCmd(byte pByte, int pIntValue)
 public boolean sendElectrodePowerOnOffCmd(byte pState)
 {
     
-    //the values are unpacked into bytes and stored in outBufScratch
-    
     //outBufScrIndex is used to load the array, start at position 0
     outBufScrIndex = 0;
     
@@ -737,7 +736,7 @@ public boolean sendElectrodePowerOnOffCmd(byte pState)
     sendByteArray(outBufScrIndex, outBufScratch);
 
     //reset so we can check ACK to see if it was for this packet
-    lastPacketTypeAcked = NO_ACTION;
+    lastPacketTypeAcked = ELECTRODE_SUPPLY_ON_OFF_CMD;
     
     //process all packets until ACK packet found, waiting up to 1 sec
     processDataPacketsUntilSpecifiedType(ACK_CMD, 100);

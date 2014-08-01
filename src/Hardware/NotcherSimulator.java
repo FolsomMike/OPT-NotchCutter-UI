@@ -175,6 +175,7 @@ public int processOneDataPacket(int pTimeOut)
         //read in the packet identifier
         byteIn.read(inBuffer, 0, 1);
 
+        //store the packet type
         lastPacketTypeHandled = inBuffer[0];
         
         //store the ID of the packet (the packet type)

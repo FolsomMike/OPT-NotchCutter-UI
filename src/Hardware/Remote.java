@@ -564,8 +564,7 @@ public int processDataPacketsUntilSpecifiedType(
 //-----------------------------------------------------------------------------
 // Remote::processOneDataPacket
 //
-// This function processes a single data packet if it is available.  If
-// pWaitForPkt is true, the function will wait until data is available.
+// This function processes a single data packet if it is available.
 //
 // This function should be overridden by sub-classes to provide specialized
 // functionality.
