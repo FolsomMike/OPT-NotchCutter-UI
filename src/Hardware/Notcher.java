@@ -586,7 +586,7 @@ public byte[] getDataPacket()
 public void invokeCutMode()
 {
     
-    sendBytes(CUT_MODE_CMD, (byte) 0);
+    //sendBytes(CUT_MODE_CMD, (byte) 0);
     
 }//end of Notcher::invokeCutMode
 //-----------------------------------------------------------------------------
@@ -600,7 +600,7 @@ public void invokeCutMode()
 public void invokeStopMode()
 {
 
-    sendBytes(STOP_MODE_CMD, (byte) 0);
+    //sendBytes(STOP_MODE_CMD, (byte) 0);
 
 }//end of Notcher::invokeStopMode
 //-----------------------------------------------------------------------------
@@ -614,7 +614,7 @@ public void invokeStopMode()
 public void zeroDepthCount()
 {
 
-    sendBytes(ZERO_DEPTH_CMD, (byte) 0);
+    //sendBytes(ZERO_DEPTH_CMD, (byte) 0);
     
 }//end of Notcher::zeroDepthCount
 //-----------------------------------------------------------------------------
@@ -628,7 +628,7 @@ public void zeroDepthCount()
 public void zeroTargetDepth()
 {
 
-    sendBytes(ZERO_TARGET_DEPTH_CMD, (byte) 0);
+    //sendBytes(ZERO_TARGET_DEPTH_CMD, (byte) 0);
     
 }//end of Notcher::zeroDepthCount
 //-----------------------------------------------------------------------------
