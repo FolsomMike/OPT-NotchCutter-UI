@@ -26,6 +26,7 @@ import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -48,7 +49,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import toolkit.Tools;
 
-
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // class NotcherUI
 //
@@ -78,7 +79,7 @@ public class NotcherUI extends JPanel implements ActionListener, ChangeListener,
     
     // hss wip -- set to private and create a getter
     public LEDGroup voltageLeds, currentLeds;
-    private LEDGroup powerOKLed, shortLed;
+    private LEDGroup powerLed, shortLed;
     
     // hsswip -- name should be set elswhere
     private String notcherName = "NotcherUI";
@@ -174,7 +175,7 @@ public void setupGui()
     outerPanel.add(panel);
     
     //vertical spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(0,20)));
+    outerPanel.add(Box.createRigidArea(new Dimension(0,15)));
     
     // add a containing JPanel
     panel = new JPanel();
@@ -218,7 +219,7 @@ public JPanel createHeaderPanel()
     outerPanel.add(panel);
     
     //horizontal spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(40, 0)));
+    outerPanel.add(Box.createRigidArea(new Dimension(10, 0)));
     
     // add a containing JPanel
     panel = new JPanel();
@@ -247,7 +248,7 @@ public JPanel createNamePanel()
     JPanel outerPanel = new JPanel();
     JPanel panel;
     
-    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.X_AXIS));
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // add a containing JPanel
@@ -255,21 +256,16 @@ public JPanel createNamePanel()
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(createNameAndNameValueLabels());
-    outerPanel.add(panel);
-    
-    // add a containing JPanel
-    panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     //horizontal spacer
-    panel.add(Box.createRigidArea(new Dimension(45, 0)));
+    panel.add(Box.createRigidArea(new Dimension(4, 0)));
     //add a button
     JButton changeNameBtn = new JButton("Change");
     changeNameBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
     changeNameBtn.setActionCommand("Change name of unit");
     changeNameBtn.addActionListener(this);
     changeNameBtn.setToolTipText("Change the name of this unit");
-    Tools.setSizes(changeNameBtn, 80, 20);
+    changeNameBtn.setMargin(new Insets(0, 0, 0, 0));
+    Tools.setSizes(changeNameBtn, 50, 20);
     panel.add(changeNameBtn);
     outerPanel.add(panel);
     
@@ -294,15 +290,15 @@ public JPanel createNameAndNameValueLabels()
     // add a containing JPanel to place the labels next to each other
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    Tools.setSizes(panel, 250, 20);
+    Tools.setSizes(panel, 225, 20);
     
     // create a label to display the name of the notcher
     JLabel nameLabel = new JLabel("Name: ");
     nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
     // gets the current font of the label
     font = nameLabel.getFont();
-    // creates a new font with the same font type and size as the label already 
-    // has but with bold
+    // creates a new font with the same font type and size that the label 
+    // already has and then makes the font bold
     newFont = new Font(font.getFontName(), Font.BOLD, 15);
     nameLabel.setFont(newFont);
     nameLabel.setToolTipText("This notcher is named: " + notcherName);
@@ -435,9 +431,6 @@ public JPanel createStatusPanel()
     panel.add(Box.createHorizontalGlue());
     outerPanel.add(panel);
     
-    //horizontal spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-    
     // add a containing JPanel
     panel = new JPanel();
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -494,14 +487,12 @@ public JPanel createPowerStatusPanel()
     // create a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    // add an led for the PowerOK status
-    powerOKLed = new LEDGroup("PowerOK", 1, 15, 15, 0, 55, 10, Color.GREEN, 
-                   panel.getBackground());
-    powerOKLed.init();
-    powerOKLed.setAlignmentX(Component.LEFT_ALIGNMENT);
-    panel.add(powerOKLed);
+    // add an led for the Power status
+    powerLed = new LEDGroup("Power", LEDGroup.SIDE_BY_SIDE, 1, 15, 15, 0, 0, 
+                                        0, Color.GREEN, panel.getBackground());
+    powerLed.init();
+    panel.add(powerLed);
     outerPanel.add(panel);
     
     //horizontal spacer
@@ -510,13 +501,11 @@ public JPanel createPowerStatusPanel()
     // create a containing JPanel
     panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // add an led for the Short status
-    shortLed = new LEDGroup("Short", 1, 15, 15, 0, 30, 10, Color.RED, 
-                   panel.getBackground());
+    shortLed = new LEDGroup("Short", LEDGroup.SIDE_BY_SIDE, 1, 15, 15, 0, 0, 
+                                        0, Color.RED, panel.getBackground());
     shortLed.init();
-    shortLed.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(shortLed);
     outerPanel.add(panel);
     
@@ -542,8 +531,8 @@ public JPanel createCurrentPanel()
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    currentLeds = new LEDGroup("Current", 10, 20, 10, 0, 16, 10, Color.RED, 
-                                getBackground()); 
+    currentLeds = new LEDGroup("Current", LEDGroup.BORDER_TITLE, 10, 20, 10, 0, 
+                                    16, 10, Color.RED, panel.getBackground()); 
     currentLeds.init();
     currentLeds.setRange(0, 10);
     currentLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -564,31 +553,54 @@ public JPanel createCurrentPanel()
 public JPanel createVoltagePanel()
 {
  
+    JPanel outerPanel;
     JPanel panel;
+    
+    // add a containing JPanel
+    outerPanel = new JPanel();
+    outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+    outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     // create a containing JPanel
     panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
-    voltageLeds = new LEDGroup("Voltage", 10, 20, 10, 0, 16, 10, Color.GREEN, 
-                                getBackground()); 
+    voltageLeds = new LEDGroup("Voltage", LEDGroup.BORDER_TITLE, 10, 20, 10, 0, 
+                                    16, 10, Color.GREEN, panel.getBackground()); 
     voltageLeds.init();
     voltageLeds.setRange(0, 10);
     voltageLeds.setAlignmentX(Component.LEFT_ALIGNMENT);
     panel.add(voltageLeds);
+    outerPanel.add(panel);
     
+    //vertical spacer
+    outerPanel.add(Box.createRigidArea(new Dimension(0, 3)));
+    
+    // create a containing JPanel
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     //add a button
-    electrodePowerOnOffBtn = new JToggleButton("Electrode Power is off");
+    electrodePowerOnOffBtn = new JToggleButton("Electrode Power is Off");
     electrodePowerOnOffBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
     electrodePowerOnOffBtn.setActionCommand("Change status of electrode power");
     electrodePowerOnOffBtn.addActionListener(this);
     electrodePowerOnOffBtn.setToolTipText("Turn electrode power on");
-    Tools.setSizes(electrodePowerOnOffBtn, 155, 20);
+    Tools.setSizes(electrodePowerOnOffBtn, 160, 20);
     electrodePowerOnOffBtn.setSelected(false);
     panel.add(electrodePowerOnOffBtn);
+    // create a filler to "push" everything in this panel to the center -- only
+    // works to "push" to the center if another glue is used
+    panel.add(Box.createHorizontalGlue());
     
-    return panel;
+    outerPanel.add(panel);
+    
+    return outerPanel;
     
 }// end of NotcherUI::createVoltagePanel
 //-----------------------------------------------------------------------------
@@ -625,16 +637,6 @@ public JPanel createHeadPanel()
     panel.add(Box.createHorizontalGlue());
     
     //create a label to display the head's current cutting position
-    // hss wip value for label should be passed in from elsewhere
-    JLabel positionLbl = new JLabel("Postion: " + "0.01");
-    positionLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-    positionLbl.setToolTipText("");
-    panel.add(positionLbl);
-    
-    //horizontal spacer
-    panel.add(Box.createRigidArea(new Dimension(10,0)));
-    
-    //create a label to display the head's current cutting position
     panel.add(createCuttingHeadPositionSpinner());
     
     // create a filler to "push" everything in this panel to the center -- only
@@ -644,7 +646,21 @@ public JPanel createHeadPanel()
     outerPanel.add(panel);
     
     //vertical spacer
-    outerPanel.add(Box.createRigidArea(new Dimension(0,10)));
+    //two panels are used so that a line can be placed in the middle of the
+    //spacer -- MatteBorder is used
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(panel, 300, 6);
+    panel.setBorder(BorderFactory.createMatteBorder
+                                                (0, 0, 1, 0, Color.LIGHT_GRAY));
+    outerPanel.add(panel);
+    
+    panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    Tools.setSizes(panel, 0, 5);
+    outerPanel.add(panel);
     
     // add a containing JPanel
     panel = new JPanel();
@@ -729,7 +745,7 @@ public JPanel createCutDepthInputSpinner()
     outerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
     
     //create a label
-    JLabel cutDepthLbl = new JLabel("Cut Depth: ");
+    JLabel cutDepthLbl = new JLabel("Target Cut Depth: ");
     cutDepthLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
     cutDepthLbl.setToolTipText("");
     outerPanel.add(cutDepthLbl);
@@ -739,8 +755,9 @@ public JPanel createCutDepthInputSpinner()
     MFloatSpinner cutDepthInputSpinner = new MFloatSpinner(5.5, 1.1, 9.9, 0.1, 
                                                             "##0.0", 60, 20);
     cutDepthInputSpinner.addChangeListener(this);
-    cutDepthInputSpinner.setName("Cut Depth Input Spinner");
-    cutDepthInputSpinner.setToolTipText("Use this to edit the cut depth");
+    cutDepthInputSpinner.setName("Cut Depth Input Spinner -- target depth");
+    cutDepthInputSpinner.setToolTipText
+                                ("Set the target cut depth of the notcher");
     cutDepthInputSpinner.setAlignmentX(Component.LEFT_ALIGNMENT);
     outerPanel.add(cutDepthInputSpinner);
     
@@ -866,7 +883,7 @@ public JPanel createChangeNameTextField()
     panel.add(Box.createHorizontalGlue());
     
     //add text field
-    changeNameTextField = new JTextField("Enter new name...");
+    changeNameTextField = new JTextField(notcherName);
     changeNameTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
     changeNameTextField.selectAll();
     Tools.setSizes(changeNameTextField, 175, 24);
@@ -909,7 +926,7 @@ public JPanel createChangeNameApplyAndCancelButtons()
     //hsswipp// use keyEvent so that you don't need to press 'alt'
     applyNewNameBtn.setMnemonic(KeyEvent.VK_ENTER);
     applyNewNameBtn.addActionListener(this);
-    applyNewNameBtn.setToolTipText("Apply this name to " + notcherName);
+    applyNewNameBtn.setToolTipText("Use this name for the unit");
     panel.add(applyNewNameBtn);
     
     //horizontal spacer
@@ -923,7 +940,7 @@ public JPanel createChangeNameApplyAndCancelButtons()
                         ("Cancel the process of changing the name of the unit");
     cancelBtn.addActionListener(this);
     cancelBtn.setToolTipText
-                ("Cancel the process of changing the name of " + notcherName);
+                ("Cancel");
     panel.add(cancelBtn);
     
     // create a filler to "push" everything in this panel to the center -- only
@@ -950,13 +967,8 @@ public void changeNotcherName()
     notcherName = changeNameTextField.getText();
     
     //reset various items that use the notcherName
-    changeNameDialog.setTitle("Change the Name of: " + notcherName);
     nameValueLabel.setText(notcherName);
     notcherSettings.setNames(notcherName);
-    
-    String message = "The name of '" + previousNotcherName + "'" +
-                        " has been changed to '" + notcherName + "'.";
-    JOptionPane.showMessageDialog(mainFrame, message);
     
     disposeChangeNameDialog();
 
@@ -973,11 +985,11 @@ public void changeNotcherName()
 public void changeElectrodePowerButtonLabelAndTip(){
     
     if (getElectrodePowerBtnState()) {
-        electrodePowerOnOffBtn.setText("Electrode Power is on");
+        electrodePowerOnOffBtn.setText("Electrode Power is On");
         electrodePowerOnOffBtn.setToolTipText("Turn electrode power off");
     }
     else {
-        electrodePowerOnOffBtn.setText("Electrode Power is off");
+        electrodePowerOnOffBtn.setText("Electrode Power is Off");
         electrodePowerOnOffBtn.setToolTipText("Turn electrode power on");
     }
         

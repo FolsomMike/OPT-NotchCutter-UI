@@ -1,5 +1,5 @@
 /******************************************************************************
-* Title: NotcherHandler.java
+* Title: NotcherGroup.java
 * Author: Mike Schoonover, Hunter Schoonover
 * Date: 4/23/09
 *
@@ -38,12 +38,12 @@ import view.ThreadSafeLogger;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// class NotcherHandler
+// class NotcherGroup
 //
 // This class creates and handles the hardware interface.
 //
 
-public class NotcherHandler extends Object{
+public class NotcherGroup extends Object{
 
     boolean controlBoardsReady = false;
 
@@ -70,23 +70,23 @@ public class NotcherHandler extends Object{
     static final int CUT_MODE = 1;
     
 //-----------------------------------------------------------------------------
-// NotcherHandler::NotcherHandler (constructor)
+// NotcherGroup::NotcherGroup (constructor)
 //
 // The parameter configFile is used to load configuration data.  The IniFile
 // should already be opened and ready to access.
 //
 
-public NotcherHandler(ThreadSafeLogger pTSLog)
+public NotcherGroup(ThreadSafeLogger pTSLog)
 
 {
 
     tsLog = pTSLog;
 
-}//end of NotcherHandler::NotcherHandler (constructor)
+}//end of NotcherGroup::NotcherGroup (constructor)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::init
+// NotcherGroup::init
 //
 // Initializes the object.  MUST be called by sub classes after instantiation.
 //
@@ -98,11 +98,11 @@ public void init()
 
     configure(); //load settings from config file
     
-}//end of NotcherHandler::init
+}//end of NotcherGroup::init
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::configure
+// NotcherGroup::configure
 //
 // Loads configuration settings from the ini file.
 
@@ -125,11 +125,11 @@ private void configure()
     //create and setup the Control boards
     configureNotchers();
 
-}//end of NotcherHandler::configure
+}//end of NotcherGroup::configure
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::configureNotchers
+// NotcherGroup::configureNotchers
 //
 // Loads configuration settings from the configuration.ini file relating to
 // the Notchers and creates/sets them up.
@@ -140,11 +140,11 @@ private void configureNotchers()
 
     notchers = new Notcher[MAX_NUM_NOTCHERS];
     
-}//end of NotcherHandler::configureNotchers
+}//end of NotcherGroup::configureNotchers
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::connect
+// NotcherGroup::connect
 //
 // Establishes a connection with each board.
 //
@@ -183,11 +183,11 @@ public void connect()
 
     connectNotchers(iFace);
 
-}//end of NotcherHandler::connect
+}//end of NotcherGroup::connect
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::connectNotchers
+// NotcherGroup::connectNotchers
 //
 // Opens a TCP/IP connection with the Notchers.
 //
@@ -243,11 +243,11 @@ private void connectNotchers(NetworkInterface pNetworkInterface)
     //initialize each Control board
     initializeNotchers();
     
-}//end of NotcherHandler::connectNotchers
+}//end of NotcherGroup::connectNotchers
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler:openUDPBroadcastSocket
+// NotcherGroup:openUDPBroadcastSocket
 //
 // Opens a UPD broadcast socket for sending queries to the remote units.
 //
@@ -281,11 +281,11 @@ private MulticastSocket openUDPBroadcastSocket(
     
     return(socket);
     
-}//end of NotcherHandler::openUDPBroadcastSocket
+}//end of NotcherGroup::openUDPBroadcastSocket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::setupSocketAndRollCallPacket
+// NotcherGroup::setupSocketAndRollCallPacket
 //
 // Sets up a MulticastSocket and datagram packet for use.
 //
@@ -324,11 +324,11 @@ private boolean setupSocketAndRollCallPacket(MulticastSocket pSocket,
         
     return(true);
     
-}//end of NotcherHandler::setupSocketAndRollCallPacket
+}//end of NotcherGroup::setupSocketAndRollCallPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::sendRollCallAndProcessResponders
+// NotcherGroup::sendRollCallAndProcessResponders
 //
 // Sets up a MulticastSocket and datagram packet for use.
 //
@@ -408,11 +408,11 @@ private int sendRollCallAndProcessResponders(MulticastSocket pSocket,
 
     return(responseCount);
     
-}//end of NotcherHandler::sendRollCallAndProcessResponders
+}//end of NotcherGroup::sendRollCallAndProcessResponders
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler:findNetworkInterface
+// NotcherGroup:findNetworkInterface
 //
 // Finds the network interface for communication with the remotes. Returns
 // null if no suitable interface found.
@@ -474,11 +474,11 @@ private NetworkInterface findNetworkInterface()
     
     return(iFace);
 
-}//end of NotcherHandler::findNetworkInterface
+}//end of NotcherGroup::findNetworkInterface
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::initializeNotchers
+// NotcherGroup::initializeNotchers
 //
 // Sets up each Notcher with various settings.
 //
@@ -490,11 +490,11 @@ private void initializeNotchers()
         if (notchers[i] != null) { notchers[i].initialize(); }
     }
 
-}//end of NotcherHandler::initializeNotchers
+}//end of NotcherGroup::initializeNotchers
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::handleNewData
+// NotcherGroup::handleNewData
 //
 // Displays, processes, or stores new data collected from the packets received
 // from the remotes.
@@ -511,11 +511,11 @@ public void handleNewData()
     
     //call the various Model methods to save the values as required
 
-}//end of NotcherHandler::handleNewData
+}//end of NotcherGroup::handleNewData
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::signed2BytesToInt
+// NotcherGroup::signed2BytesToInt
 //
 // Converts the two bytes of a signed short int to an integer.
 //
@@ -527,11 +527,11 @@ private int signed2BytesToInt(byte pByte1, byte pByte0)
 
     return (short)((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
     
-}//end of NotcherHandler::signed2BytesToInt
+}//end of NotcherGroup::signed2BytesToInt
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::unSigned2BytesToInt
+// NotcherGroup::unSigned2BytesToInt
 //
 // Converts the two bytes of an unsigned short to an integer.
 //
@@ -543,11 +543,11 @@ private int unSigned2BytesToInt(byte pByte1, byte pByte0)
 
     return (int)((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
     
-}//end of NotcherHandler::unSigned2BytesToInt
+}//end of NotcherGroup::unSigned2BytesToInt
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::signed4BytesToInt
+// NotcherGroup::signed4BytesToInt
 //
 // Converts the four bytes of a signed integer to an integer.
 //
@@ -562,11 +562,11 @@ private int signed4BytesToInt(
          ((pByte3<<24) & 0xff000000) +  ((pByte2<<16) & 0xff0000)
           + ((pByte1<<8) & 0xff00) + (pByte0 & 0xff);
 
-}//end of NotcherHandler::signed4BytesToInt
+}//end of NotcherGroup::signed4BytesToInt
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::logStatus
+// NotcherGroup::logStatus
 //
 // Writes various status and error messages to the log window.
 //
@@ -574,11 +574,11 @@ private int signed4BytesToInt(
 private void logStatus(Log pLogWindow)
 {
 
-}//end of NotcherHandler::logStatus
+}//end of NotcherGroup::logStatus
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::shutDown
+// NotcherGroup::shutDown
 //
 // This function should be called before exiting the program.  Overriding the
 // "finalize" method does not work as it does not get called reliably upon
@@ -592,11 +592,11 @@ public void shutDown()
         if (notchers[i]!= null) { notchers[i].shutDown(); }
     }
 
-}//end of NotcherHandler::shutDown
+}//end of NotcherGroup::shutDown
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::loadCalFile
+// NotcherGroup::loadCalFile
 //
 // This loads the file used for storing calibration information such as cut
 // depth, cut speed, cut aggression, etc.
@@ -619,11 +619,11 @@ private void loadCalFile(IniFile pCalFile)
         notchers[i].loadCalFile(pCalFile);
     }
 
-}//end of NotcherHandler::loadCalFile
+}//end of NotcherGroup::loadCalFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::saveCalFile
+// NotcherGroup::saveCalFile
 //
 // This saves the file used for storing calibration information such as cut
 // depth, cut speed, cut aggression, etc.
@@ -645,11 +645,11 @@ private void saveCalFile(IniFile pCalFile)
         notchers[i].saveCalFile(pCalFile);
     }
 
-}//end of NotcherHandler::saveCalFile
+}//end of NotcherGroup::saveCalFile
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::displayMessages
+// NotcherGroup::displayMessages
 //
 // Displays any messages received from the remote.
 //
@@ -660,11 +660,11 @@ private void saveCalFile(IniFile pCalFile)
 private void displayMessages()
 {
 
-}//end of NotcherHandler::displayMessages
+}//end of NotcherGroup::displayMessages
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::doTasks
+// NotcherGroup::doTasks
 //
 // Should be called by a timer so that various tasks can be performed as
 // necessary.  Since Java doesn't update the screen during calls to the user
@@ -677,11 +677,11 @@ private void doTasks()
 
     displayMessages();
 
-}//end of NotcherHandler::doTasks
+}//end of NotcherGroup::doTasks
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::setMode
+// NotcherGroup::setMode
 //
 // Sets the mode to CUT, STOPPED, etc. for unit with IP address pIP.
 //
@@ -691,23 +691,23 @@ public void setMode(String pIP, int pOpMode)
 
     opMode = pOpMode;
 
-    if (opMode == NotcherHandler.CUT_MODE){
+    if (opMode == NotcherGroup.CUT_MODE){
 
         invokeCutMode(pIP);
         
     }
 
-    if (opMode == NotcherHandler.STOPPED_MODE){
+    if (opMode == NotcherGroup.STOPPED_MODE){
 
         invokeStopMode(pIP);
             
     }
 
-}//end of NotcherHandler::setMode
+}//end of NotcherGroup::setMode
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::invokeCutMode
+// NotcherGroup::invokeCutMode
 //
 // Puts unit with IP address pIP in Cut mode.
 //
@@ -718,11 +718,11 @@ private void invokeCutMode(String pIP)
     Notcher n = findUnitByIP(pIP);
     if (n != null) n.invokeCutMode();
 
-}//end of NotcherHandler::invokeCutMode
+}//end of NotcherGroup::invokeCutMode
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::invokeStopMode
+// NotcherGroup::invokeStopMode
 //
 // Puts unit with IP address pIP in Stop mode.
 //
@@ -733,11 +733,11 @@ private void invokeStopMode(String pIP)
     Notcher n = findUnitByIP(pIP);
     if (n != null) n.invokeStopMode();    
         
-}//end of NotcherHandler::invokeStopMode
+}//end of NotcherGroup::invokeStopMode
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::getMonitorPacket
+// NotcherGroup::getMonitorPacket
 //
 // Returns monitoring data from unit with IP address pIP.
 //
@@ -754,11 +754,11 @@ public byte[] getMonitorPacket(String pIP)
         return n.getDataPacket();
     }
 
-}//end of NotcherHandler::getMonitorPacket
+}//end of NotcherGroup::getMonitorPacket
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::zeroDepthCount
+// NotcherGroup::zeroDepthCount
 //
 // Sends command to zero the depth count to unit with IP address pIP.
 //
@@ -769,11 +769,11 @@ public void zeroDepthCount(String pIP)
     Notcher n = findUnitByIP(pIP);
     if (n != null) n.zeroDepthCount();
 
-}//end of NotcherHandler::zeroEncoderCount
+}//end of NotcherGroup::zeroEncoderCount
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::findUnitByIP
+// NotcherGroup::findUnitByIP
 //
 // Finds the Notcher object in the array which has IP address of pIP.
 //
@@ -793,11 +793,11 @@ public Notcher findUnitByIP(String pIP)
     
     return(null);
     
-}//end of NotcherHandler::findUnitByIP
+}//end of NotcherGroup::findUnitByIP
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::getNotcher
+// NotcherGroup::getNotcher
 //
 // Returns a reference to the Notcher in the array at position pIndex.
 //
@@ -807,11 +807,11 @@ public Notcher getNotcher(int pIndex)
 
     return(notchers[pIndex]);
 
-}//end of NotcherHandler::getNotcher
+}//end of NotcherGroup::getNotcher
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::getSimulate
+// NotcherGroup::getSimulate
 //
 // Returns the simulate flag.  This flag is set if any simulation is being
 // performed so that outside classes can adjust accordingly, such as by
@@ -823,11 +823,11 @@ public boolean getSimulate()
     
     return (simulateNotchers);
 
-}//end of NotcherHandler::getSimulate
+}//end of NotcherGroup::getSimulate
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::waitSleep
+// NotcherGroup::waitSleep
 //
 // Sleeps for pTime milliseconds.
 //
@@ -840,11 +840,11 @@ private void waitSleep(int pTime)
     }
     catch(InterruptedException e){}
 
-}//end of NotcherHandler::waitSleep
+}//end of NotcherGroup::waitSleep
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::setUDPResponseFlag
+// NotcherGroup::setUDPResponseFlag
 //
 // Sets the udpResponseFlag true in the Notcher which has an ipAddress matching
 // pIPAddress.
@@ -862,11 +862,11 @@ private void setUDPResponseFlag(String pIPAddress)
         }
     }
 
-}//end of NotcherHandler::setUDPResponseFlag
+}//end of NotcherGroup::setUDPResponseFlag
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::displayUnresponsiveIPAddresses
+// NotcherGroup::displayUnresponsiveIPAddresses
 //
 // Displays a list of units which do not have their udp flag set.
 //
@@ -883,11 +883,11 @@ private void displayUnresponsiveIPAddresses()
         }
     }
 
-}//end of NotcherHandler::displayUnresponsiveIPAddresses
+}//end of NotcherGroup::displayUnresponsiveIPAddresses
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::sendByteUDP
+// NotcherGroup::sendByteUDP
 //
 // Sends pByte via the UDP socket pSocket using pOutPacket.
 //
@@ -907,11 +907,11 @@ private void
         logSevere(e.getMessage() + " - Error: 1995");
     }
 
-}//end of NotcherHandler::sendByteUDP
+}//end of NotcherGroup::sendByteUDP
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::logSevere
+// NotcherGroup::logSevere
 //
 // Logs pMessage with level SEVERE using the Java logger.
 //
@@ -921,11 +921,11 @@ private void logSevere(String pMessage)
 
     Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage);
 
-}//end of NotcherHandler::logSevere
+}//end of NotcherGroup::logSevere
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// NotcherHandler::logStackTrace
+// NotcherGroup::logStackTrace
 //
 // Logs stack trace info for exception pE with pMessage at level SEVERE using
 // the Java logger.
@@ -936,9 +936,9 @@ private void logStackTrace(String pMessage, Exception pE)
 
     Logger.getLogger(getClass().getName()).log(Level.SEVERE, pMessage, pE);
 
-}//end of NotcherHandler::logStackTrace
+}//end of NotcherGroup::logStackTrace
 //-----------------------------------------------------------------------------
 
-}//end of class NotcherHandler
+}//end of class NotcherGroup
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
